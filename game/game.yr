@@ -1,0 +1,123 @@
+mod game.game;
+
+import core.io;
+import core.string;
+
+import std.memory;
+
+import common.lib.signal;
+import common.lib.sdl;
+import common.screen;
+import game.eventHandler;
+import common.resource;
+
+import game.player;
+import game.collision;
+
+struct
+| screen : Screen
+| eventHdl : EventHandler
+| continue : bool
+| mainPlayer : Player
+| testPlayer : Player
+ -> Game;
+
+// for now...
+cte gWindowWidth = 640;
+cte gWindowHeight = 480;
+cte gWindowPosX = 2024;
+cte gWindowPosY = 100;
+cte gTitle = "YrFight";
+cte gPlayerName = "Abitbol";
+cte gDefaultPosX = 200;
+cte gDefaultPosY = 400;
+
+def createGame (ref game : Game) 
+{    
+    game.screen = createScreen (gTitle, gWindowWidth, gWindowHeight, gWindowPosX, gWindowPosY);
+    game.eventHdl = createEventHandler (game);
+    game.continue = true;
+
+    createResourcesManager (game.screen);
+    createCollisionManager (gWindowWidth, gWindowHeight);
+    
+    game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY, ResourceType::Test);
+    game.testPlayer = createPlayer (gPlayerName.dup(), 50, 50, ResourceType::Test);
+
+    game.screen.addDrawables (game.mainPlayer.getDrawables ());
+    game.screen.addDrawables (game.testPlayer.getDrawables ());
+
+    let colManager = getCollisionManager ();
+    colManager.addObject (&(game.mainPlayer.body));
+    colManager.addObject (&(game.testPlayer.body));
+    
+    initEvents (game.eventHdl);
+}
+
+def start (ref game : Game)
+{
+    let screen = game.screen;
+    // we don't forget to free sdl at the end of the scope !
+    on exit => screen.destroy();
+
+    while (game.continue)
+    {
+        screen.clear();
+        
+        game.eventHdl.handleEvents ();
+        game.passRow ();
+        
+        screen.display();
+        SDL_Delay (8u);
+    }
+}
+
+def passRow (ref game : Game)
+{
+    game.mainPlayer.passRow ();
+    game.testPlayer.passRow ();
+}
+
+def initEvents (ref eventHdl : EventHandler)
+{
+    let quitSignal = Signal!(ref Game)::init;
+    quitSignal.connect (onQuit);
+        
+    let keyRightSignal = Signal!(ref Game)::init;
+    keyRightSignal.connect (onKeyRight);
+
+    let keyLeftSignal = Signal!(ref Game)::init;
+    keyLeftSignal.connect (onKeyLeft);
+
+    let keySpaceSignal = Signal!(ref Game)::init;
+    keySpaceSignal.connect (onKeySpace);
+    
+    eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, quitSignal);
+
+    eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Scancode::SDL_SCANCODE_RIGHT, keyRightSignal);
+    eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Scancode::SDL_SCANCODE_LEFT, keyLeftSignal);
+
+    eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Keycode::SDLK_SPACE, keySpaceSignal);
+}
+
+def onQuit (ref game : Game)
+{
+    game.continue = false;
+    println ("Bye !");
+}
+
+def onKeyRight (ref game : Game)
+{
+    game.mainPlayer.goRight ();
+}
+
+def onKeyLeft (ref game : Game)
+{
+    game.mainPlayer.goLeft ();
+}
+
+def onKeySpace (ref game : Game)
+{
+    game.mainPlayer.jump ();
+}

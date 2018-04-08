@@ -1,0 +1,11 @@
+mod mainGame;
+
+import core.io;
+import game.game;
+
+def main(args : [string])
+{
+    let game = Game::init;
+    game.createGame ();
+    game.start();
+}
