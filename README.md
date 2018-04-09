@@ -25,3 +25,39 @@ Jeu 2D en réseau de combat réalisé avec le langage Ymir
 
  - un serveur et un client
  - création d'une petite lib style netez afin de communiquer par messages
+
+### Format du fichier sprite (.sprt)
+
+```json
+[
+  {
+    sprites: [
+      {      
+        id: '{{string()}}',
+        position: '{{integer(20, 40)}}, {{integer(20, 40)}}',
+        width: '{{integer(20, 40)}}',
+        height: '{{integer(20, 40)}}',
+        hitboxes: [
+          {
+            position: '{{integer(20, 40)}}, {{integer(20, 40)}}',
+            width: '{{integer(20, 40)}}',
+            height: '{{integer(20, 40)}}'
+          }
+        ]
+      }
+    ],
+    animations: [
+      {
+        id: '{{string()}}',
+        frames: [
+          {
+            spriteId : '{{objectId()}}',
+            delayBefore: '{{integer(20, 40)}}'
+          }
+        ],
+        canLoop: '{{bool()}}'
+      }
+    ]
+  }
+]
+```
