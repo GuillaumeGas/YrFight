@@ -28,7 +28,7 @@ Jeu 2D en réseau de combat réalisé avec le langage Ymir
 
 ### Format du fichier sprite (.sprt)
 
-```json
+```
 [
   {
     sprites: [
