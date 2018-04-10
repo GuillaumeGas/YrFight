@@ -28,12 +28,12 @@ private
 // TODO : the createwindow flag should come from the main function in order to propose the fullscreen mode
 def createScreen (const title : string, const windowWidth : i32, const windowHeight : i32, const windowPosX : i32, const windowPosY : i32) -> Screen
 {
-    if (SDL_Init (SDL_InitFlag::Video) != 0)
+    if (SDL_Init (SDL_InitFlag::Video | SDL_InitFlag::Joystick) != 0)
     {
         printErr ("SDL_Init() error");
         abort ();
     }
-
+    
     let screen = Screen::init;
     screen.window = SDL_CreateWindow (title.ptr, windowPosX, windowPosY, windowWidth, windowHeight, SDL_WindowFlag::Shown);
 

@@ -26,12 +26,19 @@ struct
  -> MouseEvent;
 
 struct
+| buttonNumber : i32
+| signal : Signal!(ref Game)
+ -> JoystickEvent;
+
+struct
 | classicEvents : List!ClassicEvent
 | keyboardEvents : List!KeyboardEvent
 | keyboardWithKeyRepeatEvents : List!KeyboardEvent // we must use a SDL_Scancode instead of a SDL_Keycode in this case
 | mouseEvents : List!MouseEvent
+| joystickEvents : List!JoystickEvent
 | sdlEvent : SDL_Event
 | game : p!Game
+| joystickEnabled : bool
  -> EventHandler;
 
 def createEventHandler (ref game : Game) -> mut EventHandler
@@ -40,8 +47,17 @@ def createEventHandler (ref game : Game) -> mut EventHandler
     let listKeyboardEvent = list!KeyboardEvent ();
     let listKeyboardWithKeyRepeatEvent = list!KeyboardEvent ();
     let listMouseEvents = list!MouseEvent ();
+    let listJoystickEvents = list!JoystickEvent ();
     let sdlEvent = SDL_Event::init;
-    return EventHandler { listClassicEvent, listKeyboardEvent, listKeyboardWithKeyRepeatEvent, listMouseEvents, sdlEvent, &game };
+    let joystickEnabled = SDL_NumJoysticks () > 0;
+    
+    if (joystickEnabled)
+    {
+        println (SDL_NumJoysticks (), " joystick(s) enabled !");
+        SDL_JoystickEventState (SDL_State::ENABLE);
+    }
+    
+    return EventHandler { listClassicEvent, listKeyboardEvent, listKeyboardWithKeyRepeatEvent, listMouseEvents, listJoystickEvents, sdlEvent, &game, joystickEnabled };
 }
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, signal : Signal!(ref Game))
@@ -62,6 +78,12 @@ def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, keyScanCode
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, buttonCode : SDL_Mousecode, signal : Signal!(ref Game, t!(i32, i32)))
 {
     eventHdl.mouseEvents.push (MouseEvent { eventType, buttonCode, signal });
+}
+
+// Joystick specific events
+def onJoystickEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, buttonNumber : i32, signal : Signal!(ref Game))
+{
+    eventHdl.joystickEvents.push (JoystickEvent { buttonNumber, signal });
 }
 
 /* 
@@ -102,6 +124,23 @@ def handleEvents(ref eventHdl : EventHandler)
             //     let mouseEvent = cast!(p!SDL_MouseButtonEvent) (sdlEventPtr);
             //     eventHdl.handleMouseMotionEvent ((*sdlEventPtr).type, ((*mouseEvent).x, (*mouseEvent).y));
             // }
+        }
+
+        if (eventHdl.joystickEnabled)
+        {
+            match (sdlEventPtr.type)
+            {
+                SDL_EventType::JOYBUTTONDOWN | SDL_EventType::JOYBUTTONUP => {
+                    println ("test");
+                    eventHdl.handleJoystickEvent (sdlEventPtr.type, 0);
+                }
+                SDL_EventType::JOYAXISMOTION => {
+                    println ("test2");
+                }
+                // SDL_EventType::JOYDEVICEADDED | SDL_EventType::JOYDEVICEREMOVED => {
+                    
+                // }
+            }
         }
     }
 }
@@ -167,4 +206,18 @@ def handleMouseEvent (ref eventHdl : EventHandler, eventType : u32, buttonCode :
         }
         next_ = next(next_);
     }    
+}
+
+def handleJoystickEvent (ref eventHdl : EventHandler, eventType : u32, buttonNumber : i32)
+{
+    let next_ = eventHdl.joystickEvents.next();
+    while (next_ !is null)
+    {
+        if (next_.value.buttonNumber == buttonNumber)
+        {
+            let sig = next_.value.signal;
+            sig.call (*(eventHdl.game));
+        }
+        next_ = next(next_);
+    }
 }

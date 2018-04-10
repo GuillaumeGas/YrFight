@@ -8,7 +8,7 @@ import std.memory;
 import common.lib.signal;
 import common.lib.sdl;
 import common.screen;
-import game.eventHandler;
+import common.eventHandler;
 import common.resource;
 
 import game.player;
@@ -99,6 +99,12 @@ def initEvents (ref eventHdl : EventHandler)
     eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Scancode::SDL_SCANCODE_LEFT, keyLeftSignal);
 
     eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Keycode::SDLK_SPACE, keySpaceSignal);
+
+    // Joystick tests
+    let buttonDownSignal = Signal!(ref Game)::init;
+    buttonDownSignal.connect (onButtonDown);
+
+    onJoystickEvent (eventHdl, SDL_EventType::JOYBUTTONDOWN, 0, buttonDownSignal);
 }
 
 def onQuit (ref game : Game)
@@ -120,4 +126,9 @@ def onKeyLeft (ref game : Game)
 def onKeySpace (ref game : Game)
 {
     game.mainPlayer.jump ();
+}
+
+def onButtonDown (ref game : Game)
+{
+    println ("Button 0 pressed");
 }
