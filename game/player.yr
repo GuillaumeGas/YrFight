@@ -27,12 +27,12 @@ private
     cte gHorizontalSpeed = 1;
     cte gVerticalSpeed = 1;
     cte gMaxJumpsCount = 2;
+    cte img = "img/test.png";
 }
 
-def createPlayer (name : string, const posX : i32, const posY : i32, resType : ResourceType) -> Player
+def createPlayer (name : string, const posX : i32, const posY : i32) -> Player
 {
-    let resManager = getResourcesManager ();
-    let bodyRes = resManager.getResource (resType);
+    let bodyRes = getResourcesManager ().getResource (img);
     let body = Drawable { Position { posX, posY }, bodyRes };
     let linearMovement = createLinearMovement (posX, posY);
     return Player { name, body, 0, 0, false, 0, linearMovement, ParabolicMovement::init };

@@ -31,6 +31,7 @@ cte gTitle = "YrFight";
 cte gPlayerName = "Abitbol";
 cte gDefaultPosX = 200;
 cte gDefaultPosY = 400;
+cte img = "img/test.png";
 
 def createGame (ref game : Game) 
 {    
@@ -38,11 +39,11 @@ def createGame (ref game : Game)
     game.eventHdl = createEventHandler (game);
     game.continue = true;
 
-    createResourcesManager (game.screen);
+    getResourcesManager ().addResource (img, game.screen.renderer);
     createCollisionManager (gWindowWidth, gWindowHeight);
     
-    game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY, ResourceType::Test);
-    game.testPlayer = createPlayer (gPlayerName.dup(), 50, 50, ResourceType::Test);
+    game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY);
+    game.testPlayer = createPlayer (gPlayerName.dup(), 50, 50);
 
     game.screen.addDrawables (game.mainPlayer.getDrawables ());
     game.screen.addDrawables (game.testPlayer.getDrawables ());

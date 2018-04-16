@@ -1,12 +1,14 @@
 mod editor.editor;
 
 import core.io;
+import std.list;
 
 import common.screen;
 import common.lib.signal;
 import common.lib.sdl;
 import common.resource;
 import editor.eventHandler;
+import common.drawable;
 
 struct
 | screen : Screen
@@ -15,7 +17,7 @@ struct
 | currentSelectedX : i32
 | currentSelectedY : i32
 | currentSelectedPos : bool
-| texture : p!SDL_Texture
+| drawable : Drawable
  -> Editor;
 
 // for now...
@@ -24,10 +26,14 @@ cte gWindowHeight = 480;
 cte gWindowPosX = 2024;
 cte gWindowPosY = 100;
 cte gTitle = "YrFight Editor";
+cte img = "img/test.png";
 
 def createEditor (ref editor : Editor, width : u32, height : u32) 
 {
     editor.screen = createScreen (gTitle, cast!i32 (width), cast!i32 (height), gWindowPosX, gWindowPosY);
+    getResourcesManager ().addResource(img, editor.screen.renderer);
+    editor.drawable = Drawable { Position { 0, 0 }, getResourcesManager ().getResource(img) };
+    editor.screen.addDrawable(&(editor.drawable));
     editor.eventHdl = createEventHandler (editor);
     editor.continue = true;
 

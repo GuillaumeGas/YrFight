@@ -12,6 +12,6 @@ struct
 
 struct
 | pos : Position
-| res : Resource
+| res : p!Resource
  -> Drawable;
 
