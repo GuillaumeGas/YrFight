@@ -99,12 +99,8 @@ def getResource (resManager : const p!ResourcesManager, path : string) -> p!Reso
         let res = next_.value;
         if (res.file == path)
         {
-<<<<<<< HEAD
-            return &res;
-=======
             printf("GetRes: %p\n".ptr, res.texture);
             return &next_.value;
->>>>>>> a418fd3... correctif resourceManager
         }
         next_ = next(next_);
     }    

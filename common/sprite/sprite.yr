@@ -1,0 +1,38 @@
+mod common.sprite.sprite;
+
+import std.map;
+
+import common.lib.sdl;
+import common.sprite.spriteitem;
+import common.sprite.animation;
+
+struct
+| spriteFrame : BTreeMap!(string,SpriteItem) 
+| animations : BTreeMap!(string,Animation)
+ -> Sprite;
+
+// Sprite
+def addSpriteItem(ref sprite : Sprite, item : SpriteItem){
+    sprite.spriteFrame.insert(item.name,item);
+}
+
+def removeSpriteItem(ref sprite : Sprite, id : string){
+    sprite.spriteFrame.remove(id);
+}
+
+def addAnimation(ref sprite : Sprite, anim : Animation){
+    sprite.animations.insert(anim.name,anim);
+}
+
+def removeAnimation(ref sprite : Sprite, id : string){
+    sprite.animations.remove(id);
+}
+
+def loadFromJson(path : string) -> Sprite{
+    return Sprite::init;
+}
+
+def toJson(path : string){
+}
+
+

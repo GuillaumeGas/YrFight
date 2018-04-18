@@ -8,6 +8,7 @@ FILE (
   GameSourceFiles
   game/*
   common/*
+  common/sprite/*
   )
 
 FILE (
@@ -15,6 +16,7 @@ FILE (
   EditorSourceFiles
   editor/*
   common/*
+  common/sprite/*
   )
 
 SET_SOURCE_FILES_PROPERTIES(mainGame.yr mainEditor.yr ${GameSourceFiles} ${EditorSourceFiles} PROPERTIES LANGUAGE C)

@@ -1,0 +1,32 @@
+mod common.sprite.animation;
+
+import std.list;
+import common.sprite.spriteitem;
+
+struct
+| spriteId : string
+| delayBefore : u16
+ -> Frame;
+
+struct
+| name : string
+| frames : List!Frame
+| canLoop : bool
+ -> Animation;
+
+def addFrame(ref anim : Animation, spriteItm : p!SpriteItem, delay : u16){
+    if(spriteItm !is null){
+        anim.frames.push(Frame{spriteItm.name, delay});
+    }
+}
+
+def removeFrame(ref anim : Animation, id : u32){
+}
+
+def loadFromJsonString(json : string) -> Animation{
+    return Animation::init;
+}
+
+def toJson() -> string{
+    return "";
+}
