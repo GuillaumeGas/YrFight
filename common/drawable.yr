@@ -11,7 +11,8 @@ struct
  -> Position;
 
 struct
-| pos : Position
+| srcpos : SDL_Rect
+| dstpos : SDL_Rect    
 | res : p!Resource
  -> Drawable;
 

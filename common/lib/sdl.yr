@@ -18,6 +18,7 @@ public {
     extern (C) SDL_FreeSurface (const surface : p!SDL_Surface);
     extern (C) SDL_QueryTexture (const texture : p!SDL_Texture, format : p!u32, access : p!i32, w : p!i32, h : p!i32) -> i32;
     extern (C) SDL_RenderCopy (const renderer : p!SDL_Renderer, const texture : p!SDL_Texture, const srcRect : p!SDL_Rect, dstRect : p!SDL_Rect) -> i32;
+    extern (C) SDL_RenderDrawRect(renderer : p!SDL_Renderer, const rect : p!SDL_Rect) -> i32;
     extern (C) SDL_DestroyTexture (const texture : p!SDL_Texture);
     extern (C) SDL_DestroyRenderer (renderer : p!SDL_Renderer);
     extern (C) SDL_DestroyWindow (window : p!SDL_Window);

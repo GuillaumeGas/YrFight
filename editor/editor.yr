@@ -9,59 +9,51 @@ import common.lib.sdl;
 import common.resource;
 import editor.eventHandler;
 import common.drawable;
+import common.sprite.sprite;
+import common.sprite.spriteitem;
 
 struct
 | screen : Screen
 | eventHdl : EventHandler
 | continue : bool
-| currentSelectedX : i32
-| currentSelectedY : i32
+| selection : SDL_Rect
 | currentSelectedPos : bool
 | drawable : Drawable
+| sprite : Sprite
  -> Editor;
 
-// for now...
 cte gWindowWidth = 640;
 cte gWindowHeight = 480;
 cte gWindowPosX = 2024;
 cte gWindowPosY = 100;
 cte gTitle = "YrFight Editor";
-cte img = "img/test.png";
 
 def createEditor (ref editor : Editor, width : u32, height : u32) 
 {
     editor.screen = createScreen (gTitle, cast!i32 (width), cast!i32 (height), gWindowPosX, gWindowPosY);
-    getResourcesManager ().addResource(img, editor.screen.renderer);
-    editor.drawable = Drawable { Position { 0, 0 }, getResourcesManager ().getResource(img) };
-    editor.screen.addDrawable(&(editor.drawable));
     editor.eventHdl = createEventHandler (editor);
-    editor.continue = true;
-
     initEvents (editor.eventHdl);
 }
 
-def createEditor (ref editor : Editor, filePath : string)
+def createEditor (ref editor : Editor, filepath : string)
 {
     editor.createEditor (cast!u32 (gWindowWidth), cast!u32 (gWindowHeight));
-    //il faut pouvoir ajouter une resource (comme la ligne en dessous)
-    //editor.screen.createResourcesManager().gImagesPathList.push (ImageRes { ResourceType::Test, filePath});
-    
-    // read map...
-    // createEditor (...
+    editor.sprite = tryLoadJson(filepath);
+    editor.sprite.loadResource(editor.screen.renderer);
+    //we must resize the window to the size of the sprite or the max size of the screen
+    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
+    editor.screen.addDrawable(&(editor.drawable));
+    editor.continue = true;
 }
 
 def start (ref editor : Editor)
 {
     let screen = editor.screen;
-
     on exit => screen.destroy ();
-
     while (editor.continue)
     {
         screen.clear ();
-
         editor.eventHdl.handleEvents ();
-
         screen.display ();
     }
 }
@@ -77,9 +69,12 @@ def initEvents (ref eventHdl : EventHandler)
     let mouseClickSignal = Signal!(ref Editor, t!(i32, i32))::init;
     mouseClickSignal.connect (onMouseClick);
 
+    let cancelSignal = Signal!(ref Editor)::init;
+    cancelSignal.connect (onCancel);    
+
     eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
-    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, quitSignal);
-    //eventHdl.onEvent (mouseMotionSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, cancelSignal);
+    eventHdl.onEvent (mouseMotionSignal);
     eventHdl.onEvent (SDL_EventType::MOUSEBUTTONUP, SDL_Mousecode::SDL_BUTTON_LEFT, mouseClickSignal);
 }
 
@@ -91,21 +86,47 @@ def onQuit (ref editor : Editor)
 
 def onMouseMotion (ref editor : Editor, pos : t!(i32, i32))
 {
-    let (x, y) = pos;
-    println("test ", x, ", ", y);
+    if(editor.currentSelectedPos)
+    {
+        let (x, y) = pos;
+        editor.selection.w = x;
+        editor.selection.h = y;
+    }
 }
 
 def onMouseClick (ref editor : Editor, pos : t!(i32, i32))
 {
     let (x, y) = pos;
+    // if nothing is selected
     if(!editor.currentSelectedPos){
-        editor.currentSelectedX = x;
-        editor.currentSelectedY = y;
+        editor.selection.x = x;
+        editor.selection.y = y;
         editor.currentSelectedPos = true;
-    }else{
+    }else{// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
-        //draw a rectangle
-        //store selectedZone
+        let spriteitem = SpriteItem::init;
+        spriteitem.position.x = editor.selection.x;
+        spriteitem.position.y = editor.selection.y;
+        spriteitem.position.w = x;
+        spriteitem.position.h = y;
+        spriteitem.name = "";
+        editor.sprite.addSpriteItem(spriteitem);
+        println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
     }
-    println("click ", x, ", ", y);
+}
+
+def drawSelection(ref editor : Editor){
+    /*
+    for key,value in editor.sprite.spriteFrame
+    {
+        SDL_RenderDrawRect(editor.screen.renderer, &(value.position));
+    }
+    SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));
+*/
+    
+}
+
+def onCancel(ref editor : Editor){
+    if(editor.currentSelectedPos)
+        editor.currentSelectedPos = false;
 }

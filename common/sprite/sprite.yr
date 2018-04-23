@@ -1,14 +1,20 @@
 mod common.sprite.sprite;
 
 import std.map;
+import std.json;
 
 import common.lib.sdl;
 import common.sprite.spriteitem;
 import common.sprite.animation;
+import common.resource;
+import common.lib.file;
+
 
 struct
 | spriteFrame : BTreeMap!(string,SpriteItem) 
 | animations : BTreeMap!(string,Animation)
+| filepath : string
+| load : bool
  -> Sprite;
 
 // Sprite
@@ -28,11 +34,48 @@ def removeAnimation(ref sprite : Sprite, id : string){
     sprite.animations.remove(id);
 }
 
-def loadFromJson(path : string) -> Sprite{
-    return Sprite::init;
+def loadSpritePackage(path : string, renderer : p!SDL_Renderer) -> Sprite{
+    //path to the .sprt (renamed zip) file
+    //uncompress
+    let jsonPath = "";
+    let sprite = tryLoadJson(jsonPath);
+    if(renderer !is null)
+        sprite.loadResource(renderer);
+    return sprite;    
+}
+
+// return a sprite. If the file doesn't exist, an empty sprite will be returned with boolean load to false.
+def tryLoadJson(path : string) -> Sprite{
+    let sprite = Sprite::init;
+    if(path != ""){
+        sprite.filepath = path;//remove json extension here (string replace)
+        //TODO check if file exist
+        //sprite.load = true;
+        let file = File::init;
+        if (file.open (path ~ ".json", "r"))
+        {
+            let str = file.readString ();
+            //Parse json string
+            file.close();
+        }
+    }
+    return sprite;
+}
+
+// init the resource in the manager
+def loadResource(ref sprite : Sprite, renderer : p!SDL_Renderer) -> bool{
+    getResourcesManager().addResource(sprite.filepath,renderer);
+    return getResourcesManager().getResource(sprite.filepath) !is null;
 }
 
 def toJson(path : string){
+    let file = File::init;
+    if(file.open( path, "w")){
+        // JSon Serializer
+        file.close();
+    }
+       
+    //genrate json file in path
 }
 
 

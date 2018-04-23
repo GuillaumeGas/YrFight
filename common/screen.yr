@@ -16,6 +16,8 @@ struct
 | drawables : List!(p!Drawable)
  -> Screen;
 
+//idea: create a Screen manager. Usefull, if we want manage many screens in same times and easily access to them
+
 private
 {
     def printErr (const message : string)
@@ -75,19 +77,29 @@ def display (ref screen : Screen)
 
         if (res.texture !is null)
         {
-            let pos = draw.pos;
+            // picture's piece
+            let spriteSrcRect = draw.srcpos;
+            // if the width and height is not defined (equal to 0), we take the full size of the texture.
+            // warning, width and height is used to get a piece of the picture, not for a "zoom"
+            if(spriteSrcRect.w == 0)
+                spriteSrcRect.w = draw.res.width;;
+            if(spriteSrcRect.h == 0)
+                spriteSrcRect.h = draw.res.height;
 
-            let spriteRect = SDL_Rect { pos.x, pos.y, res.width, res.height };
-            if (SDL_RenderCopy (screen.renderer, res.texture, null, &spriteRect) < 0)
+            // drawing the picture at the position x,y with a a specific width and height
+            let spriteDstRect = draw.dstpos;
+            if(spriteDstRect.w == 0)
+                spriteDstRect.w = draw.res.width;;
+            if(spriteDstRect.h == 0)
+                spriteDstRect.h = draw.res.height;
+            if (SDL_RenderCopy (screen.renderer, res.texture, &spriteSrcRect, &spriteDstRect) < 0)
             {
                 printErr ("SDL_RenderCopy() error");
                 abort ();
             }
         }
-
         next_ = next (next_);
     }
-    
     SDL_RenderPresent (screen.renderer);
 }
 

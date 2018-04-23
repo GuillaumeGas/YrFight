@@ -66,6 +66,7 @@ def getResourcesManager () -> p!ResourcesManager
 
 def addResource(ref manager : p!ResourcesManager, path : string, renderer : p!SDL_Renderer)
 {
+    println(path);
     let surface = IMG_Load (path.ptr);
     if(surface is null){
         println ("Surface loading error");
@@ -99,7 +100,6 @@ def getResource (resManager : const p!ResourcesManager, path : string) -> p!Reso
         let res = next_.value;
         if (res.file == path)
         {
-            printf("GetRes: %p\n".ptr, res.texture);
             return &next_.value;
         }
         next_ = next(next_);
