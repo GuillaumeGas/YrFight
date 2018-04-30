@@ -63,10 +63,10 @@ def initEvents (ref eventHdl : EventHandler)
     let quitSignal = Signal!(ref Editor)::init;
     quitSignal.connect (onQuit);
 
-    let mouseMotionSignal = Signal!(ref Editor, t!(i32, i32))::init;
+    let mouseMotionSignal = Signal!(ref Editor, (i32, i32))::init;
     mouseMotionSignal.connect (onMouseMotion);
 
-    let mouseClickSignal = Signal!(ref Editor, t!(i32, i32))::init;
+    let mouseClickSignal = Signal!(ref Editor, (i32, i32))::init;
     mouseClickSignal.connect (onMouseClick);
 
     let cancelSignal = Signal!(ref Editor)::init;
@@ -84,7 +84,7 @@ def onQuit (ref editor : Editor)
     println ("Bye !");
 }
 
-def onMouseMotion (ref editor : Editor, pos : t!(i32, i32))
+def onMouseMotion (ref editor : Editor, pos : (i32, i32))
 {
     if(editor.currentSelectedPos)
     {
@@ -94,7 +94,7 @@ def onMouseMotion (ref editor : Editor, pos : t!(i32, i32))
     }
 }
 
-def onMouseClick (ref editor : Editor, pos : t!(i32, i32))
+def onMouseClick (ref editor : Editor, pos : (i32, i32))
 {
     let (x, y) = pos;
     // if nothing is selected
