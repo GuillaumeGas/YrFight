@@ -9,6 +9,8 @@ import std.list;
 import common.lib.sdl;
 import common.drawable;
 import common.resource;
+import common.lib.signal;
+import editor.editor;
 
 struct
 | window : p!SDL_Window
@@ -67,7 +69,7 @@ def clear (ref screen : Screen)
     SDL_RenderClear (screen.renderer);
 }
 
-def display (ref screen : Screen)
+def draw (ref screen : Screen)
 {
     let next_ = screen.drawables.next ();
     while (next_ !is null)
@@ -100,6 +102,10 @@ def display (ref screen : Screen)
         }
         next_ = next (next_);
     }
+}
+
+def display(ref screen : Screen)
+{
     SDL_RenderPresent (screen.renderer);
 }
 

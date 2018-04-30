@@ -2,6 +2,8 @@ mod editor.editor;
 
 import core.io;
 import std.list;
+import std.map;
+import std.conv;
 
 import common.screen;
 import common.lib.signal;
@@ -54,6 +56,8 @@ def start (ref editor : Editor)
     {
         screen.clear ();
         editor.eventHdl.handleEvents ();
+        screen.draw();
+        editor.drawSelection();
         screen.display ();
     }
 }
@@ -109,24 +113,40 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
         spriteitem.position.y = editor.selection.y;
         spriteitem.position.w = x;
         spriteitem.position.h = y;
-        spriteitem.name = "";
+        spriteitem.name = toString(editor.sprite.spriteFrame.len);
         editor.sprite.addSpriteItem(spriteitem);
         println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
     }
 }
 
 def drawSelection(ref editor : Editor){
-    /*
-    for key,value in editor.sprite.spriteFrame
-    {
+    SDL_SetRenderDrawColor(editor.screen.renderer, cast!u8(237), cast!u8(28), cast!u8(36) , cast!u8(255));
+    for key, value in editor.sprite.spriteFrame {
         SDL_RenderDrawRect(editor.screen.renderer, &(value.position));
     }
-    SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));
-*/
-    
+    SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
 }
 
 def onCancel(ref editor : Editor){
     if(editor.currentSelectedPos)
         editor.currentSelectedPos = false;
+}
+
+
+def toString (val : u64) -> [char]{
+    let res = [char]::init;
+    let allChar = "0123456789";
+    let force = true;
+    let reverse = [char]::init;
+    while (val != 0 || force)
+    {
+        reverse = reverse ~ [allChar[val % cast!u64(10)]];
+        force = false;
+        val = val / cast!u64(10);
+    }
+    for it in 0U .. reverse.len
+    {
+        res = res ~ [reverse[reverse.len - 1U - it]];
+    }
+    return res;
 }

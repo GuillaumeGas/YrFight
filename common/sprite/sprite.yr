@@ -20,6 +20,9 @@ struct
 // Sprite
 def addSpriteItem(ref sprite : Sprite, item : SpriteItem){
     sprite.spriteFrame.insert(item.name,item);
+    for key, value in sprite.spriteFrame {
+        println("Box ", key, ": ", value.position.x, ", ", value.position.y, ", ", value.position.w, ", ", value.position.h);
+    }
 }
 
 def removeSpriteItem(ref sprite : Sprite, id : string){
