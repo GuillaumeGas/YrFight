@@ -50,15 +50,14 @@ def createEditor (ref editor : Editor, filepath : string)
 
 def start (ref editor : Editor)
 {
-    let screen = editor.screen;
-    on exit => screen.destroy ();
+    on exit => editor.screen.destroy ();
     while (editor.continue)
     {
-        screen.clear ();
+        editor.screen.clear ();
         editor.eventHdl.handleEvents ();
-        screen.draw();
+        editor.screen.draw();
         editor.drawSelection();
-        screen.display ();
+        editor.screen.display ();
     }
 }
 
@@ -74,10 +73,17 @@ def initEvents (ref eventHdl : EventHandler)
     mouseClickSignal.connect (onMouseClick);
 
     let cancelSignal = Signal!(ref Editor)::init;
-    cancelSignal.connect (onCancel);    
+    cancelSignal.connect (onCancel);
+    
+    let zoomInSignal = Signal!(ref Editor)::init;
+    zoomInSignal.connect (onZoomIn);
+    let zoomOutSignal = Signal!(ref Editor)::init;
+    zoomOutSignal.connect (onZoomOut);    
 
     eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, cancelSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_UP, zoomInSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_DOWN, zoomOutSignal);
     eventHdl.onEvent (mouseMotionSignal);
     eventHdl.onEvent (SDL_EventType::MOUSEBUTTONUP, SDL_Mousecode::SDL_BUTTON_LEFT, mouseClickSignal);
 }
@@ -111,11 +117,11 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     }else{// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
         let spriteitem = SpriteItem::init;
-        spriteitem.position.x = editor.selection.x;
-        spriteitem.position.y = editor.selection.y;
-        spriteitem.position.w = x-editor.selection.x;
-        spriteitem.position.h = y-editor.selection.y;
-        spriteitem.name = toString(editor.sprite.spriteFrame.len);
+        spriteitem.position.x = cast!i32(editor.selection.x/editor.screen.zoom);
+        spriteitem.position.y = cast!i32(editor.selection.y/editor.screen.zoom);
+        spriteitem.position.w = cast!i32((x-editor.selection.x)/editor.screen.zoom);
+        spriteitem.position.h = cast!i32((y-editor.selection.y)/editor.screen.zoom);
+        spriteitem.name = to!string(editor.sprite.spriteFrame.len);
         editor.sprite.addSpriteItem(spriteitem);
         println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
     }
@@ -124,7 +130,12 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
 def drawSelection(ref editor : Editor){
     SDL_SetRenderDrawColor(editor.screen.renderer, cast!u8(237), cast!u8(28), cast!u8(36) , cast!u8(255));
     for key, value in editor.sprite.spriteFrame {
-        SDL_RenderDrawRect(editor.screen.renderer, &(value.position));
+        let tmpVal = value;
+        tmpVal.position.x = cast!i32(value.position.x * editor.screen.zoom);
+        tmpVal.position.y = cast!i32(value.position.y * editor.screen.zoom);
+        tmpVal.position.w = cast!i32(value.position.w * editor.screen.zoom);
+        tmpVal.position.h = cast!i32(value.position.h * editor.screen.zoom);
+        SDL_RenderDrawRect(editor.screen.renderer, &(tmpVal.position));
     }
     if(editor.currentSelectedPos)
         SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
@@ -135,21 +146,10 @@ def onCancel(ref editor : Editor){
         editor.currentSelectedPos = false;
 }
 
+def onZoomIn(ref editor : Editor){
+    editor.screen.zoomIn();
+}
 
-def toString (val : u64) -> [char]{
-    let res = [char]::init;
-    let allChar = "0123456789";
-    let force = true;
-    let reverse = [char]::init;
-    while (val != 0 || force)
-    {
-        reverse = reverse ~ [allChar[val % cast!u64(10)]];
-        force = false;
-        val = val / cast!u64(10);
-    }
-    for it in 0U .. reverse.len
-    {
-        res = res ~ [reverse[reverse.len - 1U - it]];
-    }
-    return res;
+def onZoomOut(ref editor : Editor){
+    editor.screen.zoomOut();
 }
