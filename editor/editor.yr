@@ -93,8 +93,8 @@ def onMouseMotion (ref editor : Editor, pos : (i32, i32))
     if(editor.currentSelectedPos)
     {
         let (x, y) = pos;
-        editor.selection.w = x;
-        editor.selection.h = y;
+        editor.selection.w = x-editor.selection.x;
+        editor.selection.h = y-editor.selection.y;
     }
 }
 
@@ -105,14 +105,16 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     if(!editor.currentSelectedPos){
         editor.selection.x = x;
         editor.selection.y = y;
+        editor.selection.w = 0;
+        editor.selection.h = 0;
         editor.currentSelectedPos = true;
     }else{// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
         let spriteitem = SpriteItem::init;
         spriteitem.position.x = editor.selection.x;
         spriteitem.position.y = editor.selection.y;
-        spriteitem.position.w = x;
-        spriteitem.position.h = y;
+        spriteitem.position.w = x-editor.selection.x;
+        spriteitem.position.h = y-editor.selection.y;
         spriteitem.name = toString(editor.sprite.spriteFrame.len);
         editor.sprite.addSpriteItem(spriteitem);
         println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
@@ -124,7 +126,8 @@ def drawSelection(ref editor : Editor){
     for key, value in editor.sprite.spriteFrame {
         SDL_RenderDrawRect(editor.screen.renderer, &(value.position));
     }
-    SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
+    if(editor.currentSelectedPos)
+        SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
 }
 
 def onCancel(ref editor : Editor){
