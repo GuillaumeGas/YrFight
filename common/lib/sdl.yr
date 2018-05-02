@@ -18,11 +18,13 @@ public {
     extern (C) SDL_FreeSurface (const surface : p!SDL_Surface);
     extern (C) SDL_QueryTexture (const texture : p!SDL_Texture, format : p!u32, access : p!i32, w : p!i32, h : p!i32) -> i32;
     extern (C) SDL_RenderCopy (const renderer : p!SDL_Renderer, const texture : p!SDL_Texture, const srcRect : p!SDL_Rect, dstRect : p!SDL_Rect) -> i32;
+    extern (C) SDL_RenderDrawRect(renderer : p!SDL_Renderer, const rect : p!SDL_Rect) -> i32;
     extern (C) SDL_DestroyTexture (const texture : p!SDL_Texture);
     extern (C) SDL_DestroyRenderer (renderer : p!SDL_Renderer);
     extern (C) SDL_DestroyWindow (window : p!SDL_Window);
     extern (C) SDL_GetError () -> const p!char;
-
+    extern (C) SDL_NumJoysticks () -> i32;
+    extern (C) SDL_JoystickEventState (const state : i32) -> i32;
     // SDL_GetWindowSize () could be usefull    
 }
 
@@ -83,8 +85,12 @@ struct
 
 // TODO : complete by using SDL.h
 enum : u32
-| Audio : 16u
-| Video : 32u
+| Timer : 0x1u
+| Audio : 0x10u
+| Video : 0x20u
+| Joystick : 0x200u
+| Haptic : 0x1000u
+| GameController : 0x2000u
  -> SDL_InitFlag;
 
 // TODO : complete by using SDL_video.h
@@ -112,6 +118,13 @@ enum : u32
 | MOUSEBUTTONDOWN : 1025U
 | MOUSEBUTTONUP : 1026U
 | MOUSEWHEEL : 1027U
+| JOYAXISMOTION : 0x600u
+| JOYBALLMOTION : 0x601u
+| JOYHATMOTION : 0x602u
+| JOYBUTTONDOWN : 0x603u
+| JOYBUTTONUP : 0x604u
+| JOYDEVICEADDED : 0x605u
+| JOYDEVICEREMOVED : 0x606u
 | UNKNOWN : 0U // not used by the SDL
  -> SDL_EventType;
 
@@ -211,8 +224,15 @@ enum SDL_Keycode {
     SDLK_UP : SdlScanCodeToKeyCode (SDL_Scancode::SDL_SCANCODE_UP)
 }
 
-enum SDL_Mousecode {
-    SDL_BUTTON_LEFT : 1ub,
-    SDL_BUTTON_MIDDLE : 2ub,
-    SDL_BUTTON_RIGHT : 3ub
-}
+enum
+| SDL_BUTTON_LEFT : 1ub
+| SDL_BUTTON_MIDDLE : 2ub
+| SDL_BUTTON_RIGHT : 3ub
+-> SDL_Mousecode;
+
+enum 
+| QUERY : -1
+| IGNORE : 0
+| DISABLE : 0
+| ENABLE : 1
+-> SDL_State;

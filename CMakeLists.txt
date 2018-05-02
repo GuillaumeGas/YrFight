@@ -8,6 +8,7 @@ FILE (
   GameSourceFiles
   game/*
   common/*
+  common/sprite/*
   )
 
 FILE (
@@ -15,13 +16,14 @@ FILE (
   EditorSourceFiles
   editor/*
   common/*
+  common/sprite/*
   )
 
 SET_SOURCE_FILES_PROPERTIES(mainGame.yr mainEditor.yr ${GameSourceFiles} ${EditorSourceFiles} PROPERTIES LANGUAGE C)
 
-ADD_EXECUTABLE(../yrfight mainGame.yr ${GameSourceFiles})
+#ADD_EXECUTABLE(../yrfight mainGame.yr ${GameSourceFiles})
 ADD_EXECUTABLE(../yreditor mainEditor.yr ${EditorSourceFiles})
-target_link_libraries (../yrfight -lSDL2 -lSDL2main -lSDL2_image -lm)
+#target_link_libraries (../yrfight -lSDL2 -lSDL2main -lSDL2_image -lm)
 target_link_libraries (../yreditor -lSDL2 -lSDL2main -lSDL2_image)
-include_directories (yrfight ./)
+#include_directories (yrfight ./)
 include_directories (yreditor ./)

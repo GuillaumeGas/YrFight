@@ -1,0 +1,27 @@
+mod common.sprite.spriteitem;
+
+import common.lib.sdl;
+import std.list;
+
+struct
+| name : string
+| position : SDL_Rect
+| hitboxes : List!SDL_Rect
+ -> SpriteItem;
+
+// SpriteItem
+def addHitbox(ref spriteItm : SpriteItem, rect : SDL_Rect){
+    spriteItm.hitboxes.push(rect);
+}
+
+def removeHitbox(ref spriteItm : SpriteItem, rect : SDL_Rect){
+}
+
+def loadFromJsonString(json : string) -> SpriteItem{
+    return SpriteItem::init;
+}
+
+def toJson() -> string
+{
+    return "";
+}

@@ -1,53 +1,63 @@
 mod editor.editor;
 
 import core.io;
+import std.list;
+import std.map;
+import std.conv;
 
 import common.screen;
 import common.lib.signal;
 import common.lib.sdl;
 import common.resource;
 import editor.eventHandler;
+import common.drawable;
+import common.sprite.sprite;
+import common.sprite.spriteitem;
 
 struct
 | screen : Screen
 | eventHdl : EventHandler
 | continue : bool
+| selection : SDL_Rect
+| currentSelectedPos : bool
+| drawable : Drawable
+| sprite : Sprite
  -> Editor;
 
-// for now...
 cte gWindowWidth = 640;
 cte gWindowHeight = 480;
 cte gWindowPosX = 2024;
 cte gWindowPosY = 100;
 cte gTitle = "YrFight Editor";
 
-def createEditor (ref editor : Editor, width : u32, height : u32, resFilePath : string) 
+def createEditor (ref editor : Editor, width : u32, height : u32) 
 {
     editor.screen = createScreen (gTitle, cast!i32 (width), cast!i32 (height), gWindowPosX, gWindowPosY);
     editor.eventHdl = createEventHandler (editor);
-    editor.continue = true;
-
     initEvents (editor.eventHdl);
 }
 
-def createEditor (ref editor : Editor, filePath : string)
+def createEditor (ref editor : Editor, filepath : string)
 {
-    // read map...
-    // createEditor (...
+    editor.createEditor (cast!u32 (gWindowWidth), cast!u32 (gWindowHeight));
+    editor.sprite = tryLoadJson(filepath);
+    editor.sprite.loadResource(editor.screen.renderer);
+    //we must resize the window to the size of the sprite or the max size of the screen
+    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
+    editor.screen.addDrawable(&(editor.drawable));
+    editor.continue = true;
 }
 
 def start (ref editor : Editor)
 {
     let screen = editor.screen;
-
     on exit => screen.destroy ();
-
     while (editor.continue)
     {
         screen.clear ();
-
         editor.eventHdl.handleEvents ();
-
+        screen.draw();
+        editor.drawSelection();
         screen.display ();
     }
 }
@@ -57,12 +67,19 @@ def initEvents (ref eventHdl : EventHandler)
     let quitSignal = Signal!(ref Editor)::init;
     quitSignal.connect (onQuit);
 
-    let mouseMotionSignal = Signal!(ref Editor, t!(i32, i32))::init;
+    let mouseMotionSignal = Signal!(ref Editor, (i32, i32))::init;
     mouseMotionSignal.connect (onMouseMotion);
-    
+
+    let mouseClickSignal = Signal!(ref Editor, (i32, i32))::init;
+    mouseClickSignal.connect (onMouseClick);
+
+    let cancelSignal = Signal!(ref Editor)::init;
+    cancelSignal.connect (onCancel);    
+
     eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
-    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, quitSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, cancelSignal);
     eventHdl.onEvent (mouseMotionSignal);
+    eventHdl.onEvent (SDL_EventType::MOUSEBUTTONUP, SDL_Mousecode::SDL_BUTTON_LEFT, mouseClickSignal);
 }
 
 def onQuit (ref editor : Editor)
@@ -71,8 +88,68 @@ def onQuit (ref editor : Editor)
     println ("Bye !");
 }
 
-def onMouseMotion (ref editor : Editor, pos : t!(i32, i32))
+def onMouseMotion (ref editor : Editor, pos : (i32, i32))
+{
+    if(editor.currentSelectedPos)
+    {
+        let (x, y) = pos;
+        editor.selection.w = x-editor.selection.x;
+        editor.selection.h = y-editor.selection.y;
+    }
+}
+
+def onMouseClick (ref editor : Editor, pos : (i32, i32))
 {
     let (x, y) = pos;
-    println("test ", x, ", ", y);
+    // if nothing is selected
+    if(!editor.currentSelectedPos){
+        editor.selection.x = x;
+        editor.selection.y = y;
+        editor.selection.w = 0;
+        editor.selection.h = 0;
+        editor.currentSelectedPos = true;
+    }else{// we add a new SpriteItem to the Sprite and we reset the selection
+        editor.currentSelectedPos = false;
+        let spriteitem = SpriteItem::init;
+        spriteitem.position.x = editor.selection.x;
+        spriteitem.position.y = editor.selection.y;
+        spriteitem.position.w = x-editor.selection.x;
+        spriteitem.position.h = y-editor.selection.y;
+        spriteitem.name = toString(editor.sprite.spriteFrame.len);
+        editor.sprite.addSpriteItem(spriteitem);
+        println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
+    }
+}
+
+def drawSelection(ref editor : Editor){
+    SDL_SetRenderDrawColor(editor.screen.renderer, cast!u8(237), cast!u8(28), cast!u8(36) , cast!u8(255));
+    for key, value in editor.sprite.spriteFrame {
+        SDL_RenderDrawRect(editor.screen.renderer, &(value.position));
+    }
+    if(editor.currentSelectedPos)
+        SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
+}
+
+def onCancel(ref editor : Editor){
+    if(editor.currentSelectedPos)
+        editor.currentSelectedPos = false;
+}
+
+
+def toString (val : u64) -> [char]{
+    let res = [char]::init;
+    let allChar = "0123456789";
+    let force = true;
+    let reverse = [char]::init;
+    while (val != 0 || force)
+    {
+        reverse = reverse ~ [allChar[val % cast!u64(10)]];
+        force = false;
+        val = val / cast!u64(10);
+    }
+    for it in 0U .. reverse.len
+    {
+        res = res ~ [reverse[reverse.len - 1U - it]];
+    }
+    return res;
 }

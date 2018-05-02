@@ -12,9 +12,12 @@ import editor.editor;
 def main(args : [string])
 {
     let editor = Editor::init;
-    editor.createEditor (100u, 100u, "test");
-    // handleParams (editor, args);
-    editor.start ();
+    if(args.len == 2){
+        editor.createEditor (args[1]);
+        editor.start ();
+    }else{
+        printUsage();
+    }
 }
 
 // TODO
@@ -46,5 +49,5 @@ def handleParams (ref editor : Editor, params : [string])
 
 def printUsage ()
 {
-    println ("I am a printUsage function and I love whisky !");
+    println ("yreditor pathToImg");
 }

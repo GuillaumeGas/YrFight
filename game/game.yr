@@ -8,7 +8,7 @@ import std.memory;
 import common.lib.signal;
 import common.lib.sdl;
 import common.screen;
-import game.eventHandler;
+import common.eventHandler;
 import common.resource;
 
 import game.player;
@@ -31,6 +31,7 @@ cte gTitle = "YrFight";
 cte gPlayerName = "Abitbol";
 cte gDefaultPosX = 200;
 cte gDefaultPosY = 400;
+cte img = "img/test.png";
 
 def createGame (ref game : Game) 
 {    
@@ -38,11 +39,11 @@ def createGame (ref game : Game)
     game.eventHdl = createEventHandler (game);
     game.continue = true;
 
-    createResourcesManager (game.screen);
+    getResourcesManager ().addResource (img, game.screen.renderer);
     createCollisionManager (gWindowWidth, gWindowHeight);
     
-    game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY, ResourceType::Test);
-    game.testPlayer = createPlayer (gPlayerName.dup(), 50, 50, ResourceType::Test);
+    game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY);
+    game.testPlayer = createPlayer (gPlayerName.dup(), 50, 50);
 
     game.screen.addDrawables (game.mainPlayer.getDrawables ());
     game.screen.addDrawables (game.testPlayer.getDrawables ());
@@ -99,6 +100,12 @@ def initEvents (ref eventHdl : EventHandler)
     eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Scancode::SDL_SCANCODE_LEFT, keyLeftSignal);
 
     eventHdl.onEvent (SDL_EventType::KEYDOWN, SDL_Keycode::SDLK_SPACE, keySpaceSignal);
+
+    // Joystick tests
+    let buttonDownSignal = Signal!(ref Game)::init;
+    buttonDownSignal.connect (onButtonDown);
+
+    onJoystickEvent (eventHdl, SDL_EventType::JOYBUTTONDOWN, 0, buttonDownSignal);
 }
 
 def onQuit (ref game : Game)
@@ -120,4 +127,9 @@ def onKeyLeft (ref game : Game)
 def onKeySpace (ref game : Game)
 {
     game.mainPlayer.jump ();
+}
+
+def onButtonDown (ref game : Game)
+{
+    println ("Button 0 pressed");
 }

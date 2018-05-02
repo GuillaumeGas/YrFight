@@ -72,7 +72,7 @@ def stop (ref movement : LinearMovement, const direction : MoveDirection)
     }
 }
 
-def nextPosition (ref movement : LinearMovement) -> mut t!(i32, i32)
+def nextPosition (ref movement : LinearMovement) -> mut (i32, i32)
 {
     movement.posX += movement.speedX;
     movement.posY += movement.speedY;
@@ -105,7 +105,7 @@ def start (ref movement : ParabolicMovement, posX : i32, posY : i32, speedInit :
     movement.timer = 0;
 }
 
-def nextPosition (ref movement : ParabolicMovement) -> t!(i32, i32)
+def nextPosition (ref movement : ParabolicMovement) -> (i32, i32)
 {
     // Relative position
     let relX = cast!i32 ((movement.vX * movement.timer) - ((movement.horizontalForce * pow (movement.timer, 2u)) / 2000));

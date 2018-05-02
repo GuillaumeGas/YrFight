@@ -1,0 +1,11 @@
+mod common.jsonobject;
+
+import std.json;
+
+def parseJson(json : string) -> JsonValue{
+    return JsonValue::init;
+}
+
+def generateJsonString() -> string{
+    return "";
+}

@@ -9,12 +9,16 @@ import std.list;
 import common.lib.sdl;
 import common.drawable;
 import common.resource;
+import common.lib.signal;
+import editor.editor;
 
 struct
 | window : p!SDL_Window
 | renderer : p!SDL_Renderer
 | drawables : List!(p!Drawable)
  -> Screen;
+
+//idea: create a Screen manager. Usefull, if we want manage many screens in same times and easily access to them
 
 private
 {
@@ -28,12 +32,12 @@ private
 // TODO : the createwindow flag should come from the main function in order to propose the fullscreen mode
 def createScreen (const title : string, const windowWidth : i32, const windowHeight : i32, const windowPosX : i32, const windowPosY : i32) -> Screen
 {
-    if (SDL_Init (SDL_InitFlag::Video) != 0)
+    if (SDL_Init (SDL_InitFlag::Video | SDL_InitFlag::Joystick) != 0)
     {
         printErr ("SDL_Init() error");
         abort ();
     }
-
+    
     let screen = Screen::init;
     screen.window = SDL_CreateWindow (title.ptr, windowPosX, windowPosY, windowWidth, windowHeight, SDL_WindowFlag::Shown);
 
@@ -65,7 +69,7 @@ def clear (ref screen : Screen)
     SDL_RenderClear (screen.renderer);
 }
 
-def display (ref screen : Screen)
+def draw (ref screen : Screen)
 {
     let next_ = screen.drawables.next ();
     while (next_ !is null)
@@ -75,19 +79,33 @@ def display (ref screen : Screen)
 
         if (res.texture !is null)
         {
-            let pos = draw.pos;
+            // picture's piece
+            let spriteSrcRect = draw.srcpos;
+            // if the width and height is not defined (equal to 0), we take the full size of the texture.
+            // warning, width and height is used to get a piece of the picture, not for a "zoom"
+            if(spriteSrcRect.w == 0)
+                spriteSrcRect.w = draw.res.width;;
+            if(spriteSrcRect.h == 0)
+                spriteSrcRect.h = draw.res.height;
 
-            let spriteRect = SDL_Rect { pos.x, pos.y, res.width, res.height };
-            if (SDL_RenderCopy (screen.renderer, res.texture, null, &spriteRect) < 0)
+            // drawing the picture at the position x,y with a a specific width and height
+            let spriteDstRect = draw.dstpos;
+            if(spriteDstRect.w == 0)
+                spriteDstRect.w = draw.res.width;;
+            if(spriteDstRect.h == 0)
+                spriteDstRect.h = draw.res.height;
+            if (SDL_RenderCopy (screen.renderer, res.texture, &spriteSrcRect, &spriteDstRect) < 0)
             {
                 printErr ("SDL_RenderCopy() error");
                 abort ();
             }
         }
-
         next_ = next (next_);
     }
-    
+}
+
+def display(ref screen : Screen)
+{
     SDL_RenderPresent (screen.renderer);
 }
 
