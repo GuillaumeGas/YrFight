@@ -19,6 +19,7 @@ struct
 | eventHdl : EventHandler
 | continue : bool
 | selection : SDL_Rect
+| mouse : SDL_Point
 | currentSelectedPos : bool
 | drawable : Drawable
 | sprite : Sprite
@@ -57,6 +58,7 @@ def start (ref editor : Editor)
         editor.eventHdl.handleEvents ();
         editor.screen.draw();
         editor.drawSelection();
+        editor.drawMouse();
         editor.screen.display ();
     }
 }
@@ -96,11 +98,17 @@ def onQuit (ref editor : Editor)
 
 def onMouseMotion (ref editor : Editor, pos : (i32, i32))
 {
-    if(editor.currentSelectedPos)
-    {
-        let (x, y) = pos;
-        editor.selection.w = x-editor.selection.x;
-        editor.selection.h = y-editor.selection.y;
+    let (x, y) = pos;
+    let newX = cast!i32((cast!i32(x/editor.screen.zoom))*editor.screen.zoom);
+    let newY = cast!i32((cast!i32(y/editor.screen.zoom))*editor.screen.zoom);
+    if(newX != editor.mouse.x || newY != editor.mouse.y){
+        editor.mouse.x = newX;
+        editor.mouse.y = newY;
+        if(editor.currentSelectedPos)
+        {
+            editor.selection.w = x-editor.selection.x;
+            editor.selection.h = y-editor.selection.y;
+        }
     }
 }
 
@@ -135,10 +143,41 @@ def drawSelection(ref editor : Editor){
         tmpVal.position.y = cast!i32(value.position.y * editor.screen.zoom);
         tmpVal.position.w = cast!i32(value.position.w * editor.screen.zoom);
         tmpVal.position.h = cast!i32(value.position.h * editor.screen.zoom);
-        SDL_RenderDrawRect(editor.screen.renderer, &(tmpVal.position));
+        editor.drawRect(tmpVal.position);
     }
     if(editor.currentSelectedPos)
-        SDL_RenderDrawRect(editor.screen.renderer, &(editor.selection));    
+        editor.drawRect(editor.selection);   
+}
+
+def drawRect(ref editor : Editor, pos : SDL_Rect){
+    for i in 0 .. 4
+    {
+        let tmp = pos;
+        if(i == 0){
+            tmp.h = cast!i32(editor.screen.zoom);
+        }
+        else if(i == 1){
+            tmp.x = tmp.x + tmp.w - cast!i32(editor.screen.zoom);
+            tmp.w = cast!i32(editor.screen.zoom);
+        }
+        else if(i == 2){
+            tmp.y = tmp.y + tmp.h - cast!i32(editor.screen.zoom);
+            tmp.h = cast!i32(editor.screen.zoom);
+        }
+        else if(i == 3){
+            tmp.w = cast!i32(editor.screen.zoom);
+        }
+        SDL_RenderFillRect(editor.screen.renderer, &tmp);
+    }
+}
+
+def drawMouse(ref editor : Editor){
+    let pos = SDL_Rect::init;
+    pos.x = editor.mouse.x;
+    pos.y = editor.mouse.y;
+    pos.w = cast!i32(editor.screen.zoom);
+    pos.h = cast!i32(editor.screen.zoom);
+    SDL_RenderFillRect(editor.screen.renderer, &(pos)); 
 }
 
 def onCancel(ref editor : Editor){

@@ -8,6 +8,7 @@ public {
     extern (C) SDL_PollEvent (event : p!SDL_Event) -> i32;
     extern (C) SDL_SetRenderDrawColor (renderer : p!SDL_Renderer, r : u8, g : u8, b : u8, a : u8) -> i32;
     extern (C) SDL_RenderFillRect (renderer : p!SDL_Renderer, const rect : p!SDL_Rect) -> i32;
+    extern (C) SDL_RenderDrawLine (renderer : p!SDL_Renderer, x1 : i32, y1 : i32, x2 : i32, y2 : i32) -> i32;
     extern (C) SDL_RenderPresent (renderer : p!SDL_Renderer);
     extern (C) SDL_RenderClear (renderer : p!SDL_Renderer) -> i32;
     extern (C) SDL_GetKeyboardState(numkeys : p!i32) -> const p!u8;
@@ -82,6 +83,11 @@ struct
 | w : i32
 | h : i32
  -> SDL_Rect;
+
+struct
+| x : i32
+| y : i32
+ -> SDL_Point;
 
 // TODO : complete by using SDL.h
 enum : u32
