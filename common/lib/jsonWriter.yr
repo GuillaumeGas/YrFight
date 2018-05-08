@@ -1,34 +1,10 @@
-mod common.lib.jsonWriter;
+mod jsonWriter;
 
 import std.json;
 import std.map;
 import std.vec;
 
-import common.lib.file;
-
-/*
-Example :
-
-def main ()
-{
-    let a = json: {
-        {
-            "foo" : [1, 2, 3, (1)],
-            "test" : {
-                "hehe" : []
-            }
-        }
-    };
-
-    let ret = writeJson (a, "test.json");
-    
-    if (ret != RetCode::Success)
-        println ("An error occured !, error code : ", ret);
-    else
-        println ("Success ! ");
-}
-
-*/
+import tools.file;
 
 enum
 | Success : 0
@@ -87,6 +63,8 @@ def write (ref file : File, jsonValue : JsonValue) -> RetCode
 
 def writeObject (ref file : File, obj : BTreeMap!(string, JsonValue)) -> RetCode
 {
+    let count = 0;
+    let size = obj.len;
     for key, value in obj
     {
         if (fprintf (file.handle, "\"%s\" : ".ptr, key.ptr) < 0)
@@ -96,8 +74,18 @@ def writeObject (ref file : File, obj : BTreeMap!(string, JsonValue)) -> RetCode
         if (ret != RetCode::Success)
             return ret;
         
-        if (fprintf (file.handle, "\n".ptr) < 0)
-            return RetCode::WritingError;
+        if (count < (size - 1U))
+        {
+            if (fprintf (file.handle, ",\n".ptr) < 0)
+                return RetCode::WritingError;
+        }
+        else
+        {
+            if (fprintf (file.handle, "\n".ptr) < 0)
+                return RetCode::WritingError;
+        }
+                count++;
+
     }
     
     return RetCode::Success;

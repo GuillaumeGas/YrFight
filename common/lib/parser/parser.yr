@@ -1,4 +1,4 @@
-mod common.lib.parser.parser;
+mod parser.parser;
 
 import std.json;
 import std.conv;
@@ -7,9 +7,9 @@ import std.map;
 import std.outbuffer;
 import std.algorithm.searching;
 
-import common.lib.parser.lexer;
-import common.lib.parser.token;
-import common.lib.parser.tokenList;
+import parser.lexer;
+import parser.token;
+import parser.tokenList;
 
 struct
 | lex : p!Lexer
@@ -29,29 +29,11 @@ def parse (ref parser : Parser) -> JsonValue
 
 def visitRoot (ref parser : Parser) -> JsonValue
 {
-    let lex = parser.lex;
-    let token = (*lex).next ();
-
-    if (token.tokenType != TokenType::ACCOL_L)
-        syntaxError (["{"], token);
-
     let res = JsonValue::init;
     res.type = JSON_TYPE::OBJECT;
 
     parser.visitAccolContent (res);
 
-    token = (*lex).next ();
-    if (token.tokenType != TokenType::ACCOL_R)
-        syntaxError (["}"], token);
-
-    return res;
-}
-
-def visitAccolContent (ref parser : Parser) -> JsonValue
-{
-    let res = JsonValue::init;
-    res.type = JSON_TYPE::OBJECT;
-    parser.visitAccolContent (res);
     return res;
 }
 
@@ -60,6 +42,11 @@ def visitAccolContent (ref parser : Parser, ref jsonValue : JsonValue)
     let lex = parser.lex;
     let token = (*lex).next ();
 
+    if (token.tokenType != TokenType::ACCOL_L)
+        syntaxError (["{"], token);
+
+    token = (*lex).next ();
+    
     // empty object
     if (token.tokenType == TokenType::ACCOL_R)
         return;
@@ -70,19 +57,20 @@ def visitAccolContent (ref parser : Parser, ref jsonValue : JsonValue)
     while (continue)
     {
         parser.visitObject (jsonValue);
-
+        
         token = (*lex).next ();
         if (token.tokenType != TokenType::COMMA)
             continue = false;
     }
 
-    (*lex).rewind ();
+    if (token.tokenType != TokenType::ACCOL_R)
+        syntaxError (["}"], token);
 }
 
 def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
 {
     let lex = parser.lex;
-
+    
     let objKey = parser.visitKey ();
     let objValue = JsonValue::init;
     
@@ -100,6 +88,7 @@ def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
         }
         TokenType::ACCOL_L => {
             parser.visitAccolContent (objValue);
+            objValue.type = JSON_TYPE::OBJECT;
         }
         _ => {
             if (!parser.visitConst (objValue))
@@ -288,7 +277,7 @@ def syntaxError (expected : [string], found : Token)
     }
     
     if (found.tokenType != TokenType::EOF)
-        str ~= " but '" ~ found.value ~ "' was found.";
+        str ~= " but '" ~ found.value ~ "' was found. Loc (" ~ to!string (found.location.line) ~ ", " ~ to!string (found.location.column) ~ ")";
 
     assert (false, str);
 }
