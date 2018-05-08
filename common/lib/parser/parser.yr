@@ -141,6 +141,11 @@ def visitArray (ref parser : Parser) -> Vector!JsonValue
             jsonValue.array = parser.visitArray ();
             jsonValue.type = JSON_TYPE::ARRAY;
         }
+        else if (token.tokenType == TokenType::ACCOL_L)
+        {
+            parser.visitAccolContent (jsonValue);
+            jsonValue.type = JSON_TYPE::OBJECT;
+        }
         else
         {
             if (!parser.visitConst (jsonValue))
