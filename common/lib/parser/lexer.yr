@@ -1,12 +1,12 @@
-mod parser.lexer;
+mod common.lib.parser.lexer;
 
 import std.vec;
 import std.algorithm.searching;
 import std.string;
 import std.map;
 
-import parser.token;
-import parser.tools.file;
+import common.lib.parser.token;
+import common.lib.parser.tools.file;
 
 struct
 | keys : [string]

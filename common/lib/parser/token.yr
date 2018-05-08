@@ -1,8 +1,8 @@
-mod parser.token;
+mod common.lib.parser.token;
 
 import std.conv;
 
-import parser.tokenList;
+import common.lib.parser.tokenList;
 
 struct
 | value : string

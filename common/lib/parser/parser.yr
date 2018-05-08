@@ -1,4 +1,4 @@
-mod parser.parser;
+mod common.lib.parser.parser;
 
 import std.json;
 import std.conv;
@@ -7,9 +7,9 @@ import std.map;
 import std.outbuffer;
 import std.algorithm.searching;
 
-import parser.lexer;
-import parser.token;
-import parser.tokenList;
+import common.lib.parser.lexer;
+import common.lib.parser.token;
+import common.lib.parser.tokenList;
 
 struct
 | lex : p!Lexer

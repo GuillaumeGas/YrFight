@@ -1,9 +1,9 @@
-mod jsonParser;
+mod common.lib.jsonParser;
 
 import std.json;
 
-import parser.lexer;
-import parser.parser;
+import common.lib.parser.lexer;
+import common.lib.parser.parser;
 
 def parseJson (filePath : string) -> JsonValue
 {
