@@ -5,12 +5,16 @@ import std.outbuffer;
 import std.conv;
 import std.traits;
 
-extern (C) fopen (const path : p!char, const mode : p!char) -> p!i32;
-extern (C) fclose (file : p!i32) -> i32;
-extern (C) fgetc (file : p!i32) -> i32;
-extern (C) fgets (buf : p!char, n : i32, file : p!i32) -> p!char;
-extern (C) feof (file : p!i32) -> i32;
-
+public
+{
+    extern (C) fopen (const path : p!char, const mode : p!char) -> p!i32;
+    extern (C) fclose (file : p!i32) -> i32;
+    extern (C) fgetc (file : p!i32) -> i32;
+    extern (C) fgets (buf : p!char, n : i32, file : p!i32) -> p!char;
+    extern (C) feof (file : p!i32) -> i32;
+    extern (C) fprintf (file : p!i32, const c : p!char, ...) -> i32;
+}
+        
 struct
 | handle : p!i32
  -> File;

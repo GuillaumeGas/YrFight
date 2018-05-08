@@ -1,0 +1,149 @@
+mod common.lib.jsonWriter;
+
+import std.json;
+import std.map;
+import std.vec;
+
+import common.lib.file;
+
+/*
+Example :
+
+def main ()
+{
+    let a = json: {
+        {
+            "foo" : [1, 2, 3, (1)],
+            "test" : {
+                "hehe" : []
+            }
+        }
+    };
+
+    let ret = writeJson (a, "test.json");
+    
+    if (ret != RetCode::Success)
+        println ("An error occured !, error code : ", ret);
+    else
+        println ("Success ! ");
+}
+
+*/
+
+enum
+| Success : 0
+| CannotOpenFile : 1
+| CannotCloseFile : 2
+| WritingError : 3
+| InvalidJsonType : 4
+-> RetCode;
+
+def writeJson (jsonValue : JsonValue, filePath : string) -> RetCode
+{
+    let file = File::init;
+
+    if (!file.open (filePath, "w"))
+        return RetCode::CannotOpenFile;
+
+    let res = file.write (jsonValue);
+    
+    if (!file.close ())
+        return RetCode::CannotCloseFile;
+
+    return res;
+}
+
+def write (ref file : File, jsonValue : JsonValue) -> RetCode
+{
+    let ret = RetCode::Success;
+
+    if (jsonValue.type == JSON_TYPE::OBJECT)
+    {
+        if (fprintf (file.handle, "{\n".ptr) < 0)
+            return RetCode::WritingError;
+    }
+    
+    match (jsonValue.type)
+    {
+        JSON_TYPE::OBJECT => ret = file.writeObject (jsonValue.obj);
+        JSON_TYPE::ARRAY => ret = file.writeArray (jsonValue.array);
+        JSON_TYPE::STRING => ret = file.writeString (jsonValue.str);
+        JSON_TYPE::INT => ret = file.writeInt (jsonValue.int);
+        JSON_TYPE::FLOAT => ret = file.writeFloat (jsonValue.float);
+        _ => ret = RetCode::InvalidJsonType;
+    }
+
+    if (ret != RetCode::Success)
+        return ret;
+
+    if (jsonValue.type == JSON_TYPE::OBJECT)
+    {
+        if (fprintf (file.handle, "}\n".ptr) < 0)
+            return RetCode::WritingError;
+    }
+    
+    return ret;
+}
+
+def writeObject (ref file : File, obj : BTreeMap!(string, JsonValue)) -> RetCode
+{
+    for key, value in obj
+    {
+        if (fprintf (file.handle, "\"%s\" : ".ptr, key.ptr) < 0)
+            return RetCode::WritingError;
+        
+        let ret = file.write (value);
+        if (ret != RetCode::Success)
+            return ret;
+        
+        if (fprintf (file.handle, "\n".ptr) < 0)
+            return RetCode::WritingError;
+    }
+    
+    return RetCode::Success;
+}
+
+def writeArray (ref file : File, array : Vector!(JsonValue)) -> RetCode
+{
+    if (fprintf (file.handle, "[".ptr) < 0)
+        return RetCode::WritingError;    
+
+    for i in 0U .. array.len
+    {
+        file.write (array[i]);
+        if (i < (array.len - 1U))
+        {
+            if (fprintf (file.handle, ", ".ptr) < 0)
+                return RetCode::WritingError;
+        }   
+    }
+    
+    if (fprintf (file.handle, "]".ptr) < 0)
+        return RetCode::WritingError;
+    
+    return RetCode::Success;
+}
+
+def writeString (ref file : File, str : string) -> RetCode
+{
+    if (fprintf (file.handle, "\"%s\"".ptr, str.ptr) < 0)
+        return RetCode::WritingError;
+    
+    return RetCode::Success;
+}
+
+def writeInt (ref file : File, value : i64) -> RetCode
+{
+    if (fprintf (file.handle, "%i".ptr, value) < 0)
+        return RetCode::WritingError;
+    
+    return RetCode::Success;
+}
+
+def writeFloat (ref file : File, value : f64) -> RetCode
+{
+    if (fprintf (file.handle, "%i".ptr, value) < 0)
+        return RetCode::WritingError;
+    
+    return RetCode::Success;
+}
