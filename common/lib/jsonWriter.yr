@@ -1,10 +1,10 @@
-mod jsonWriter;
+mod common.lib.jsonWriter;
 
 import std.json;
 import std.map;
 import std.vec;
 
-import tools.file;
+import common.lib.file;
 
 enum
 | Success : 0
