@@ -1,0 +1,217 @@
+mod parser.lexer;
+
+import std.vec;
+import std.algorithm.searching;
+import std.string;
+import std.map;
+
+import parser.token;
+import parser.tools.file;
+
+struct
+| keys : [string]
+| skips : BTreeMap!(string, bool)
+| coms : [(string, string)]
+| currentIndex : i32
+| currentLine : Vector!Token
+| currentLocation : Location
+| file : File
+| eof : bool
+| newLine : bool
+| commentsEnabled : bool
+ -> Lexer;
+
+def createLexer (ref lexer : Lexer, filePath : string)
+{
+    if (!lexer.file.open (filePath, "r"))
+        assert (false, "createLexer() : File open error");
+
+    lexer.eof = false;
+    lexer.currentLocation.line = 1;
+    lexer.currentLocation.column = 1;
+    lexer.newLine = true;
+    lexer.commentsEnabled = false;
+}
+
+def setKeys (ref lexer : Lexer, keys : [string])
+{
+    lexer.keys = keys;
+}
+
+def setSkips (ref lexer : Lexer, skips : [string])
+{
+    for it in skips
+        lexer.skips.insert (it, true);
+}
+
+def setComs (ref lexer : Lexer, coms : [(string, string)])
+{
+    lexer.coms = coms;
+}
+
+def isSkip (ref lexer : Lexer, token : Token) -> bool
+{
+    // let pred = (dg ((string, bool)) -> bool) { ((a) => a.0 == token.value) };
+    // return any (lexer.skips, pred);
+    let skip = token.value in lexer.skips;
+
+    if (skip is null)
+        return false;
+    
+    return (*skip);
+}
+
+def isCom (ref lexer : Lexer, token : Token) -> Token
+{
+    let coms = lexer.coms;
+    for it in coms
+    {
+        if (it.0 == token.value)
+            return makeToken (it.1, Location { token.location.line, token.location.column });
+    }
+    return makeEofToken (lexer.currentLocation);
+}
+
+def setSkipEnabled (ref lexer : Lexer, skip : string, enabled : bool)
+{
+    let elem = skip in lexer.skips;
+    if (elem !is null)
+        *elem = enabled;
+}
+
+def getWord (ref lexer : Lexer, index : i32) -> Token
+{
+    if (index >= 0)
+    {
+        if (index == lexer.currentLine.len)
+        {
+            lexer.currentLine.push (lexer.getWord ());
+        }
+        return lexer.currentLine[index];
+    }
+    else
+    {
+        assert (false, "getWord() : Out of range exception !");
+    }
+}
+
+def getWord (ref lexer : Lexer) -> Token
+{
+    let currentPos = ftell (lexer.file.handle);
+    let line = lexer.file.readLine ();
+
+    if (line.len == 0)
+    {
+        lexer.eof = true;
+        return makeEofToken (lexer.currentLocation);
+    }
+
+    let max = 0, pos = cast!i32 (line.len), index = -1;
+    let tok = "";
+
+    let keys = lexer.keys;
+    for (key in keys)
+    {
+        index = cast!i32 (line.indexOf (key));
+        if (index > -1)
+        {
+            if (index < pos)
+            {
+                pos = index;
+                max = cast!i32 (key.len);
+                tok = key;
+            }
+            else if (index == pos)
+            {
+                if (max < key.len)
+                {
+                    max = cast!i32 (key.len);
+                    tok = key;
+                }
+            }
+        }
+    }
+
+    let loc = Location { lexer.currentLocation.line, lexer.currentLocation.column };
+
+    if (pos == line.len)
+    {
+        lexer.mfseek (line, cast!i32 (currentPos + cast!i32 (line.len)));
+        lexer.currentLocation.column += cast!i32 (line.len);
+        return makeToken (line, loc);
+    }
+    else if (pos == 0)
+    {
+        lexer.mfseek (tok, cast!i32 (currentPos + cast!i32 (tok.len)));
+        lexer.currentLocation.column += cast!i32 (tok.len);
+        return makeToken (tok, loc);
+    }
+    else
+    {
+        let str = line [ 0 .. pos ];
+        lexer.mfseek (str.array (), cast!i32 (currentPos + pos));
+        lexer.currentLocation.column += pos;
+        return makeToken (str.array (), loc);
+    }
+
+    // on ne devrait jamais arriver ici... mais le compilo m'engueule si je fais pas ça
+    return makeEofToken (lexer.currentLocation);
+}
+
+def next (ref lexer : Lexer) -> Token
+{
+    let t = lexer.getWord (lexer.currentIndex);
+    lexer.currentIndex++;
+    let com = lexer.isCom (t);
+
+    while (lexer.isSkip (t) || !com.isEof)
+    {        
+        if (!com.isEof && lexer.commentsEnabled)
+        {
+            t = lexer.getWord (lexer.currentIndex);
+            lexer.currentIndex++;
+
+            while (t.value != com.value && !t.isEof)
+            {
+                t = lexer.getWord (lexer.currentIndex);
+                lexer.currentIndex++;
+            }
+
+            if (!t.isEof)
+                t = lexer.getWord (lexer.currentIndex);
+        }
+        else
+        {
+            t = lexer.getWord (lexer.currentIndex);
+        }
+        com = lexer.isCom (t);
+        lexer.currentIndex++;
+    }
+    return t;
+}
+
+def rewind (ref lexer : Lexer)
+{
+    lexer.rewind (1);
+}
+
+def rewind (ref lexer : Lexer, count : i32)
+{
+    while (count > 0 && lexer.currentIndex > 0)
+    {
+        lexer.currentIndex--;
+        if (!lexer.isSkip (lexer.getWord (lexer.currentIndex)))
+            count--;
+    }
+}
+
+def mfseek (ref lexer : Lexer, ref tok : string, offset : i32)
+{
+    if (tok == "\n" || tok == "\r")
+    {
+        lexer.currentLocation.line++;
+        lexer.currentLocation.column = 0;
+        lexer.newLine = true;
+    }
+    lexer.file.fseek (offset, SeekType::SEEK_SET);
+}

@@ -1,0 +1,313 @@
+mod parser.parser;
+
+import std.json;
+import std.conv;
+import std.vec;
+import std.map;
+import std.outbuffer;
+import std.algorithm.searching;
+
+import parser.lexer;
+import parser.token;
+import parser.tokenList;
+
+struct
+| lex : p!Lexer
+| root : JsonValue
+ -> Parser;
+
+def createParser (ref parser : Parser, lexer : p!Lexer)
+{
+    parser.lex = lexer;
+}
+
+def parse (ref parser : Parser) -> JsonValue
+{
+    parser.root = parser.visitRoot ();
+    return parser.root;
+}
+
+def visitRoot (ref parser : Parser) -> JsonValue
+{
+    let lex = parser.lex;
+    let token = (*lex).next ();
+
+    if (token.tokenType != TokenType::ACCOL_L)
+        syntaxError (["{"], token);
+
+    let res = JsonValue::init;
+    res.type = JSON_TYPE::OBJECT;
+
+    parser.visitAccolContent (res);
+
+    token = (*lex).next ();
+    if (token.tokenType != TokenType::ACCOL_R)
+        syntaxError (["}"], token);
+
+    return res;
+}
+
+def visitAccolContent (ref parser : Parser) -> JsonValue
+{
+    let res = JsonValue::init;
+    res.type = JSON_TYPE::OBJECT;
+    parser.visitAccolContent (res);
+    return res;
+}
+
+def visitAccolContent (ref parser : Parser, ref jsonValue : JsonValue)
+{
+    let lex = parser.lex;
+    let token = (*lex).next ();
+
+    // empty object
+    if (token.tokenType == TokenType::ACCOL_R)
+        return;
+
+    // if it's not en empty object, we should have at least one object
+    (*lex).rewind ();
+    let continue = true;
+    while (continue)
+    {
+        parser.visitObject (jsonValue);
+
+        token = (*lex).next ();
+        if (token.tokenType != TokenType::COMMA)
+            continue = false;
+    }
+
+    (*lex).rewind ();
+}
+
+def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
+{
+    let lex = parser.lex;
+
+    let objKey = parser.visitKey ();
+    let objValue = JsonValue::init;
+    
+    let token = (*lex).next ();
+    if (token.tokenType != TokenType::COLON)
+        syntaxError ([":"], token);
+
+    token = (*lex).next ();
+    (*lex).rewind ();
+    match (token.tokenType)
+    {
+        TokenType::BRACKET_L => {
+            objValue.array = parser.visitArray ();
+            objValue.type = JSON_TYPE::ARRAY;
+        }
+        TokenType::ACCOL_L => {
+            parser.visitAccolContent (objValue);
+        }
+        _ => {
+            if (!parser.visitConst (objValue))
+                syntaxError (["array", "object", "string", "number"], token);
+        }
+    }
+
+    jsonValue.obj.insert (objKey, objValue);
+}
+
+def visitKey (ref parser : Parser) -> mut string
+{
+    let lex = parser.lex;
+    let token = (*lex).next ();
+    
+    if (token.tokenType != TokenType::DOUBLE_QUOTE)
+        syntaxError (["\""], token);
+
+    token = (*lex).next ();
+
+    if (!isValidKey (token.value))
+        syntaxError (["a valid key"], token);
+    
+    let key = token.value;
+    
+    token = (*lex).next ();
+    if (token.tokenType != TokenType::DOUBLE_QUOTE)
+        syntaxError (["\""], token);
+
+    return key;
+}
+
+def visitArray (ref parser : Parser) -> Vector!JsonValue
+{
+    let lex = parser.lex;
+    let res = Vector!(JsonValue)::init;
+    let token = (*lex).next ();
+
+    if (token.tokenType != TokenType::BRACKET_L)
+        syntaxError (["["], token);
+
+    token = (*lex).next ();
+    while (token.tokenType != TokenType::BRACKET_R && token.tokenType != TokenType::EOF)
+    {
+        (*lex).rewind ();
+        let jsonValue = JsonValue::init;
+
+        if (token.tokenType == TokenType::BRACKET_L)
+        {
+            jsonValue.array = parser.visitArray ();
+            jsonValue.type = JSON_TYPE::ARRAY;
+        }
+        else
+        {
+            if (!parser.visitConst (jsonValue))
+                syntaxError (["string", "integer", "float", "array"], token);
+        }
+
+        res.push (jsonValue);
+
+        token = (*lex).next ();
+
+        if (token.tokenType != TokenType::COMMA)
+            break;
+
+        token = (*lex).next ();
+    }
+
+    if (token.tokenType != TokenType::BRACKET_R)
+        syntaxError (["]"], token);
+
+    return res;
+}
+
+def visitConst (ref parser : Parser, ref jsonValue : JsonValue) -> bool
+{
+    if (parser.visitQuotedString (jsonValue))
+        return true;
+    if (parser.visitInt (jsonValue))
+        return true;
+    if (parser.visitFloat (jsonValue))
+        return true;
+    return false;
+}
+
+def visitQuotedString (ref parser : Parser, ref jsonValue : JsonValue) -> bool
+{
+    let lex = parser.lex;
+    let token = (*lex).next ();
+
+    if (token.tokenType != TokenType::DOUBLE_QUOTE)
+    {
+        (*lex).rewind ();
+        return false;
+    }
+
+    (*lex).setSkipEnabled (" ", false);
+
+    let outbuf = OutBuffer ();
+    while (token.tokenType != TokenType::EOF)
+    {
+        token = (*lex).next ();
+
+        // TODO : handle BACK_SLASH
+        if (token.tokenType == TokenType::DOUBLE_QUOTE || token.tokenType == TokenType::EOF)
+            break;
+
+        outbuf.write (token.value);
+    }
+
+    if (token.tokenType != TokenType::DOUBLE_QUOTE)
+        syntaxError (["\""], token);
+
+    jsonValue.type = JSON_TYPE::STRING;
+    jsonValue.str = to!string (outbuf);
+
+    (*lex).setSkipEnabled (" ", true);
+    
+    return true;
+}
+
+def visitInt (ref parser : Parser, ref jsonValue : JsonValue) -> bool
+{
+    let lex = parser.lex;
+    let token = (*lex).next ();
+
+    if (token.tokenType != TokenType::OTHER)
+        syntaxError (["quoted string", "integer", "float", "array", "object"], token);
+
+    if (!isInt (token.value))
+    {
+        (*lex).rewind ();
+        return false;
+    }
+
+    jsonValue.int = to!i32 (token.value);
+    jsonValue.type = JSON_TYPE::INT;
+    
+    return true;
+}
+
+def visitFloat (ref parser : Parser, ref jsonValue : JsonValue) -> bool
+{
+    assert (false, "TODO : visitFloat ()");
+}
+    
+
+def @inline isInt (value : string) -> bool
+{
+    for it in value
+    {
+        if (it < '0' && it > '9')
+            return false;
+    }
+    return true;   
+}
+
+// si je la met en inline, ça foire au link
+def isValidKey (value : string) -> bool
+{
+    let acceptedChar = ['#', '$', '_'];
+
+    let c = value[0];
+    let pred = (dg (char) -> bool) { ((a) => a == c) };
+    if ((c < 'A' || (c > 'Z' && c < 'a' && c != '_') || c > 'z') && !any (acceptedChar, pred))
+        return false;
+    
+    for i in 1U .. value.len
+    {
+        c = value[i];
+        if ((c < '0' || (c > '9' && c < 'A') || (c > 'Z' && c < 'a' && c != '_') || c > 'z') && !any (acceptedChar, pred))
+            return false;
+    }
+    return true;
+}
+
+def syntaxError (expected : [string], found : Token)
+{
+    let str = "Syntax error : expected ";
+
+    for i in 0U .. expected.len
+    {
+        str ~= "'" ~ expected[i] ~ "'";
+        if (i < (expected.len - 1UL))
+            str ~= ", ";
+    }
+    
+    if (found.tokenType != TokenType::EOF)
+        str ~= " but '" ~ found.value ~ "' was found.";
+
+    assert (false, str);
+}
+
+def printJson (ref jsonValue : JsonValue)
+{
+    println ("{");
+    print (jsonValue.array, 4);
+    println ("}");
+}
+
+def print (ref array : Vector!JsonValue, const offset : i32)
+{
+    for i in 0 .. offset
+        print (" ");
+
+    for it in array
+    {
+        print (it);
+        println ("");
+    }
+}

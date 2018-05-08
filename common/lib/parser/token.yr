@@ -1,0 +1,33 @@
+mod parser.token;
+
+import std.conv;
+
+import parser.tokenList;
+
+struct
+| value : string
+| tokenType : TokenType
+| location : Location
+| isEof : bool
+ -> Token;
+
+struct
+| line : i32
+| column : i32
+ -> Location;
+
+def makeToken (value : string, location : Location) -> Token
+{
+    let tokenType = getTokenType (value);
+    return Token { value, tokenType, location, tokenType == TokenType::EOF };
+}
+
+def makeEofToken (location : Location) -> Token
+{
+    return Token { "", TokenType::EOF, location, true };
+}
+
+def toString (ref token : Token) -> mut string
+{
+    return "< " ~ getTokenTypeStr (token.tokenType) ~ " \"" ~ token.value ~ "\", loc (" ~ to!string (token.location.line) ~ ", " ~ to!string (token.location.column) ~ ") >";
+}

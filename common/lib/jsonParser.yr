@@ -1,0 +1,47 @@
+mod jsonParser;
+
+import std.json;
+
+import parser.lexer;
+import parser.parser;
+
+def parseJson (filePath : string) -> JsonValue
+{
+    let lex = Lexer::init;
+    lex.createLexer (filePath);
+    lex.setKeys (["{", "}", "[", "]", ":", "\"", ",", " ", "\n", "\r", "\t"]);
+    lex.setSkips (["\n", " ", "\n", "\r", "\t"]);
+    // lex.setComs ([("//", "\\n"), ("/*", "*/")]); // a corriger
+
+    let parser = Parser::init;
+    parser.createParser (&lex);
+
+    let ret = parser.parse ();
+
+    // debug
+    // ret.print (); println ("");
+
+    return ret;
+}
+
+/*
+mod main;
+
+import jsonParser;
+
+def main (args : [string])
+{
+    if (args.len < 2u)
+    {
+        println ("Missing file path !");
+    }
+    else
+    {
+        let res = parseJson (args[1]);
+
+        // println (res);
+    }
+
+    return 0;
+}
+*/

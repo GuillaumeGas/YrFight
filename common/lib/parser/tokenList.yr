@@ -1,0 +1,48 @@
+mod parser.tokenList;
+
+enum
+| ACCOL_L : 0
+| ACCOL_R : 1
+| EOF : 2
+| OTHER : 3
+| SPACE : 4
+| BRACKET_L : 5
+| BRACKET_R : 6
+| COMMA : 7
+| DOUBLE_QUOTE : 8
+| COLON : 9
+ -> TokenType;
+
+def @inline getTokenType (value : string) -> TokenType
+{
+    match (value)
+    {
+        "{" => return TokenType::ACCOL_L;
+        "}" => return TokenType::ACCOL_R;
+        "[" => return TokenType::BRACKET_L;
+        "]" => return TokenType::BRACKET_R;
+        "," => return TokenType::COMMA;
+        "\"" => return TokenType::DOUBLE_QUOTE;
+        ":" => return TokenType::COLON;
+        "" => return TokenType::EOF;
+        " " => return TokenType::SPACE;
+        _ => return TokenType::OTHER;
+    }
+}
+
+def @inline getTokenTypeStr (tokenType : TokenType) -> string
+{
+    match (tokenType)
+    {
+        TokenType::ACCOL_L => return "ACCOL_L";
+        TokenType::ACCOL_R => return "ACCOL_R";
+        TokenType::BRACKET_L => return "BRACKET_L";
+        TokenType::BRACKET_R => return "BRACKET_R";
+        TokenType::EOF => return "EOF";
+        TokenType::SPACE => return "SPACE";
+        TokenType::COMMA => return "COMMA";
+        TokenType::DOUBLE_QUOTE => return "DOUBLE_QUOTE";
+        TokenType::COLON => return "COLON";
+        _ => return "OTHER";
+    }
+}
