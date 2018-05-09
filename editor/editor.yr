@@ -104,7 +104,7 @@ def onMouseMotion (ref editor : Editor, pos : (i32, i32))
     if(newX != editor.mouse.x || newY != editor.mouse.y){
         editor.mouse.x = newX;
         editor.mouse.y = newY;
-        if(editor.currentSelectedPos)
+        if(editor.currentSelectedPos && x > editor.selection.x && y > editor.selection.y)
         {
             editor.selection.w = x-editor.selection.x;
             editor.selection.h = y-editor.selection.y;
@@ -122,7 +122,7 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
         editor.selection.w = 0;
         editor.selection.h = 0;
         editor.currentSelectedPos = true;
-    }else{// we add a new SpriteItem to the Sprite and we reset the selection
+    }else if(x > editor.selection.x && y > editor.selection.y){// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
         let spriteitem = SpriteItem::init;
         spriteitem.position.x = cast!i32(editor.selection.x/editor.screen.zoom);
@@ -187,6 +187,8 @@ def onCancel(ref editor : Editor){
 
 def onZoomIn(ref editor : Editor){
     editor.screen.zoomIn();
+    editor.selection.x = cast!i32(editor.selection.x * (editor.screen.zoomStep + 1));
+    editor.selection.y = cast!i32(editor.selection.y * (editor.screen.zoomStep + 1));
 }
 
 def onZoomOut(ref editor : Editor){

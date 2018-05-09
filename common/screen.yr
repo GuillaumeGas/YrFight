@@ -17,6 +17,7 @@ struct
 | renderer : p!SDL_Renderer
 | drawables : List!(p!Drawable)
 | zoom : f32
+| zoomStep : f32
  -> Screen;
 
 //idea: create a Screen manager. Usefull, if we want manage many screens in same times and easily access to them
@@ -41,6 +42,7 @@ def createScreen (const title : string, const windowWidth : i32, const windowHei
     
     let screen = Screen::init;
     screen.zoom = 1.f;
+    screen.zoomStep = 0.25f;
     screen.window = SDL_CreateWindow (title.ptr, windowPosX, windowPosY, windowWidth, windowHeight, SDL_WindowFlag::Shown);
 
     if (screen.window is null)
@@ -136,10 +138,10 @@ def addDrawables (ref screen : Screen, drawables : List!(p!Drawable))
 }
 
 def zoomIn(ref screen : Screen){
-    screen.zoom = screen.zoom + 0.25f;
+    screen.zoom = screen.zoom + screen.zoomStep;
 }
 
 def zoomOut(ref screen : Screen){
     if(screen.zoom > 1.f)
-        screen.zoom = screen.zoom - 0.25f;
+        screen.zoom = screen.zoom - screen.zoomStep;
 }
