@@ -2,6 +2,8 @@ mod common.sprite.spriteitem;
 
 import common.lib.sdl;
 import std.list;
+import std.json;
+import std.map;
 
 struct
 | name : string
@@ -21,7 +23,45 @@ def loadFromJsonString(json : string) -> SpriteItem{
     return SpriteItem::init;
 }
 
-def toJson() -> string
+def toJson(ref spriteItm : SpriteItem) -> JsonValue
 {
-    return "";
+    let json = JsonValue::init;
+    json.type = JSON_TYPE::OBJECT;
+    
+    let name = JsonValue::init;
+    name.type = JSON_TYPE::STRING;
+    name.str = spriteItm.name;
+    json.obj.insert("name", name);
+    
+    json.obj.insert("position", spriteItm.position.toJson());
+    
+    return json;
+}
+
+def toJson(ref rect : SDL_Rect) -> JsonValue
+{
+    let json = JsonValue::init;
+    json.type = JSON_TYPE::OBJECT;
+
+    let x = JsonValue::init;
+    x.type = JSON_TYPE::INT;
+    x.int = rect.x;
+    json.obj.insert("x", x);
+
+    let y = JsonValue::init;
+    y.type = JSON_TYPE::INT;
+    y.int = rect.y;
+    json.obj.insert("y", y);
+
+    let w = JsonValue::init;
+    w.type = JSON_TYPE::INT;
+    w.int = rect.w;
+    json.obj.insert("w", w);
+
+    let h = JsonValue::init;
+    h.type = JSON_TYPE::INT;
+    h.int = rect.h;
+    json.obj.insert("h", h);
+
+    return json;
 }

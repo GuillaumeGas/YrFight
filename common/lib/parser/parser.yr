@@ -316,3 +316,11 @@ def print (ref array : Vector!JsonValue, const offset : i32)
         println ("");
     }
 }
+
+
+def any (T) (const a : [T], pred : dg (T)-> bool) -> bool {
+    for i in a {
+        if pred (i) {return true;}
+    }
+    return false;
+}
