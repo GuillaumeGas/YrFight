@@ -29,11 +29,22 @@ def parse (ref parser : Parser) -> JsonValue
 
 def visitRoot (ref parser : Parser) -> JsonValue
 {
+    let lex = parser.lex;
+    let token = (*lex).next ();
+    (*lex).rewind ();
+    
     let res = JsonValue::init;
-    res.type = JSON_TYPE::OBJECT;
 
-    parser.visitAccolContent (res);
-
+    if (token.tokenType == TokenType::ACCOL_L) {
+        res.type = JSON_TYPE::OBJECT;
+        parser.visitAccolContent (res);
+    } else if (token.tokenType == TokenType::BRACKET_L) {
+        res.type = JSON_TYPE::ARRAY;
+        res.array = parser.visitArray ();
+    } else {
+        syntaxError (["object", "array"], token);
+    }
+        
     return res;
 }
 
