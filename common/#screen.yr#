@@ -1,0 +1,147 @@
+mod common.screen;
+
+extern (C) printf (const c : p!char, ...);
+
+import core.io;
+import std.abort;
+import std.list;
+
+import common.lib.sdl;
+import common.drawable;
+import common.resource;
+import common.lib.signal;
+import editor.editor;
+
+struct
+| window : p!SDL_Window
+| renderer : p!SDL_Renderer
+| drawables : List!(p!Drawable)
+| zoom : f32
+| zoomStep : f32
+ -> Screen;
+
+//idea: create a Screen manager. Usefull, if we want manage many screens in same times and easily access to them
+
+private
+{
+    def printErr (const message : string)
+    {
+        print (message, " : ");
+        printf ("%s".ptr, SDL_GetError());
+    }
+}
+
+// TODO : the createwindow flag should come from the main function in order to propose the fullscreen mode
+def createScreen (const title : string, const windowWidth : i32, const windowHeight : i32, const windowPosX : i32, const windowPosY : i32) -> Screen
+{
+    if (SDL_Init (SDL_InitFlag::Video | SDL_InitFlag::Joystick) != 0)
+    {
+        printErr ("SDL_Init() error");
+        abort ();
+    }
+    
+    let screen = Screen::init;
+    screen.zoom = 1.f;
+    screen.zoomStep = 0.25f;
+    screen.window = SDL_CreateWindow (title.ptr, windowPosX, windowPosY, windowWidth, windowHeight, SDL_WindowFlag::Shown);
+
+    if (screen.window is null)
+    {
+        printErr ("SDL_CreateWindow() error");
+        abort ();
+    }
+
+    // -1 : init the first rendering driver supporting the requested flag (index of rendering driver) 
+    screen.renderer = SDL_CreateRenderer (screen.window, -1, SDL_RendererFlag::Accelerated);
+
+    if (screen.renderer is null)
+    {
+        printErr ("SDL_CreateRenderer() error");
+        abort ();
+    }
+
+    SDL_RenderSetLogicalSize (screen.renderer, windowWidth, windowHeight);
+
+    screen.drawables = list!(p!Drawable) ();
+    
+    return screen;
+}
+
+def clear (ref screen : Screen)
+{
+    SDL_SetRenderDrawColor (screen.renderer, 0ub, 0ub, 0ub, 255ub);
+    SDL_RenderClear (screen.renderer);
+}
+
+def draw (ref screen : Screen)
+{
+    let next_ = screen.drawables.next ();
+    while (next_ !is null)
+    {
+        let draw = *(next_.value);
+        let res = draw.res;
+
+        if (res.texture !is null)
+        {
+            // picture's piece
+            let spriteSrcRect = draw.srcpos;
+            // if the width and height is not defined (equal to 0), we take the full size of the texture.
+            // warning, width and height is used to get a piece of the picture, not for a "zoom"
+            if(spriteSrcRect.w == 0)
+                spriteSrcRect.w = draw.res.width;;
+            if(spriteSrcRect.h == 0)
+                spriteSrcRect.h = draw.res.height;
+
+            // drawing the picture at the position x,y with a a specific width and height
+            let spriteDstRect = draw.dstpos;
+            if(spriteDstRect.w == 0)
+                spriteDstRect.w = cast!i32(draw.res.width*screen.zoom);
+            if(spriteDstRect.h == 0)
+                spriteDstRect.h = cast!i32(draw.res.height*screen.zoom);
+            if (SDL_RenderCopy (screen.renderer, res.texture, &spriteSrcRect, &spriteDstRect) < 0)
+            {
+                printErr ("SDL_RenderCopy() error");
+                abort ();
+            }
+        }
+        next_ = next (next_);
+    }
+}
+
+def display(ref screen : Screen)
+{
+    SDL_RenderPresent (screen.renderer);
+}
+
+def destroy (ref screen : Screen)
+{
+    println ("destroy !");
+    if (screen.renderer !is null)
+        SDL_DestroyRenderer (screen.renderer);
+    if (screen.window !is null)
+        SDL_DestroyWindow (screen.window);
+}
+
+def addDrawable (ref screen : Screen, drawable : p!Drawable)
+{
+    screen.drawables.push (drawable);
+}
+
+def addDrawables (ref screen : Screen, drawables : List!(p!Drawable))
+{
+    let next_ = drawables.next ();
+    while (next_ !is null)
+    {
+        screen.drawables.push (next_.value);
+        next_ = next(next_);
+    }
+}
+
+def zoomIn(ref screen : Screen){
+    screen.zoom = screen.zoom + screen.zoomStep;
+}
+
+def zoomOut(ref screen : Screen){
+    if(screen.zoom > 1.f)
+        screen.zoom = screen.zoom - screen.zoomStep;
+}

@@ -3,6 +3,7 @@ mod common.sprite.spriteitem;
 import common.lib.sdl;
 import std.list;
 import std.json;
+import std.map;
 
 struct
 | name : string
@@ -32,7 +33,7 @@ def toJson(ref spriteItm : SpriteItem) -> JsonValue
     name.str = spriteItm.name;
     json.obj.insert("name", name);
     
-    json.obj.insert("position", spriteItm.position.rect);
+    json.obj.insert("position", spriteItm.position.toJson());
     
     return json;
 }

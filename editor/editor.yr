@@ -13,6 +13,7 @@ import editor.eventHandler;
 import common.drawable;
 import common.sprite.sprite;
 import common.sprite.spriteitem;
+import common.lib.parser.parser;
 
 struct
 | screen : Screen
@@ -80,12 +81,16 @@ def initEvents (ref eventHdl : EventHandler)
     let zoomInSignal = Signal!(ref Editor)::init;
     zoomInSignal.connect (onZoomIn);
     let zoomOutSignal = Signal!(ref Editor)::init;
-    zoomOutSignal.connect (onZoomOut);    
+    zoomOutSignal.connect (onZoomOut);
+
+     let saveSignal = Signal!(ref Editor)::init;
+    saveSignal.connect (onSave);    
 
     eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, cancelSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_UP, zoomInSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_DOWN, zoomOutSignal);
+    eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_s, saveSignal);
     eventHdl.onEvent (mouseMotionSignal);
     eventHdl.onEvent (SDL_EventType::MOUSEBUTTONUP, SDL_Mousecode::SDL_BUTTON_LEFT, mouseClickSignal);
 }
@@ -193,4 +198,9 @@ def onZoomIn(ref editor : Editor){
 
 def onZoomOut(ref editor : Editor){
     editor.screen.zoomOut();
+}
+
+def onSave(ref editor : Editor){
+    let json = editor.sprite.toJson();
+    json.printJson();
 }

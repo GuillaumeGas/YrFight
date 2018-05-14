@@ -71,24 +71,27 @@ def loadResource(ref sprite : Sprite, renderer : p!SDL_Renderer) -> bool{
     return getResourcesManager().getResource(sprite.filepath) !is null;
 }
 
-def toJson(ref sprite : Sprite, path : string){
-    let file = File::init;
-    if(file.open( path, "w")){
-        let json = JsonValue::init;
-        json.type = JSON_TYPE::OBJECT;
-
-        let spriteItemJson = JsonValue::init;
-        spriteItemJson.type = JSON_TYPE::ARRAY;        
-        for key, value in sprite.spriteFrame{
-            spriteItemJson.array.push(value.toJson());
-        }
-
-        json.obj.insert("spriteItems", spriteItemJson);
-        // JSon Serializer
-        file.close();
+def toJson(ref sprite : Sprite) -> JsonValue
+{
+    let json = JsonValue::init;
+    json.type = JSON_TYPE::OBJECT;
+    
+    let spriteItemJson = JsonValue::init;
+    spriteItemJson.type = JSON_TYPE::ARRAY;        
+    for key, value in sprite.spriteFrame{
+        spriteItemJson.array.push(value.toJson());
     }
-       
-    //genrate json file in path
+    
+    json.obj.insert("spriteItems", spriteItemJson);
+    return json;
 }
 
+
+def toJsonFile(ref sprite : Sprite, path : string){
+    let file = File::init;
+    if(file.open( path, "w")){        
+        let json = sprite.toJson();
+        file.close();
+    }       
+}
 
