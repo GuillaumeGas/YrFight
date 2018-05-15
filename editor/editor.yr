@@ -14,6 +14,7 @@ import common.drawable;
 import common.sprite.sprite;
 import common.sprite.spriteitem;
 import common.lib.parser.parser;
+import common.lib.jsonWriter;
 
 struct
 | screen : Screen
@@ -202,5 +203,6 @@ def onZoomOut(ref editor : Editor){
 
 def onSave(ref editor : Editor){
     let json = editor.sprite.toJson();
-    println (json.toString());
+    if(writeJson(json, editor.sprite.filepath ~ ".json") == RetCode::Success)
+        println("Sauvegarde effectuée");
 }
