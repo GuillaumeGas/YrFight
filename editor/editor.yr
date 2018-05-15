@@ -202,5 +202,5 @@ def onZoomOut(ref editor : Editor){
 
 def onSave(ref editor : Editor){
     let json = editor.sprite.toJson();
-    println (json.toString(0, false));
+    println (json.toString());
 }

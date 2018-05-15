@@ -325,6 +325,10 @@ def any (T) (const a : [T], pred : dg (T)-> bool) -> bool {
     return false;
 }
 
+def toString(ref json : JsonValue) -> string{
+    return json.toString(0,false);
+}
+
 def toString(ref json : JsonValue, const offset : i32, const fromKey : bool) -> string{
     let val = string::init;
     match json.type {
@@ -362,7 +366,6 @@ def toString(ref json : JsonValue, const offset : i32, const fromKey : bool) -> 
                         val ~= ",\n";
                     else
                         notFirst = true;
-                    //val ~= printOffset(offset+1);
                     val ~= item.toString(offset+1, false);
                 }
                 val ~= "\n";
@@ -372,6 +375,9 @@ def toString(ref json : JsonValue, const offset : i32, const fromKey : bool) -> 
         }
         JSON_TYPE::INT => {
             val ~= to!string(json.int);
+        }
+        JSON_TYPE::FLOAT => {
+            val ~= to!string(json.float);
         }
         JSON_TYPE::STRING => {
             val ~= json.str;
