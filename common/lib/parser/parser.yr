@@ -325,37 +325,50 @@ def any (T) (const a : [T], pred : dg (T)-> bool) -> bool {
     return false;
 }
 
-def toString(ref json : JsonValue, const offset : i32) -> string{
+def toString(ref json : JsonValue, const offset : i32, const fromKey : bool) -> string{
     let val = string::init;
     match json.type {
         JSON_TYPE::OBJECT => {
-            val ~= "{\n";
-            let notFirst = false;
-            for key, value in json.obj {
-                if(notFirst)
-                    val ~= ",\n";
-                else
-                    notFirst = true;
-                val ~= printOffset(offset+1);
-                val ~= key ~ ": " ~ value.toString(offset+(cast!i32(key.len)/4)+2);
+            if(!fromKey)
+                val ~= printOffset(offset);
+            val ~= "{";
+            if(json.obj.len > 0){
+                val ~= "\n";
+                let notFirst = false;
+                for key, value in json.obj {
+                    if(notFirst)
+                        val ~= ",\n";
+                    else
+                        notFirst = true;
+                    val ~= printOffset(offset+1);
+                    let size = cast!i32((key ~ ": ").len);
+                    val ~= key ~ ": " ~ value.toString(offset+size+1, true);
+                }                
+                val ~= "\n";
+                val ~= printOffset(offset);
             }
-            val ~= printOffset(offset);
-            val ~= "}\n";
+            val ~= "}";
         }
         JSON_TYPE::ARRAY => {
-            val ~= "[\n";
-            let notFirst = false;
-            for item in json.array
-            {
-                if(notFirst)
-                    val ~= ",\n";
-                else
-                    notFirst = true;
-                val ~= printOffset(offset+1);
-                val ~= item.toString(offset+2);
+            if(!fromKey)
+                val ~= printOffset(offset);
+            val ~= "[";
+            if(json.array.len > 0){
+                val ~= "\n";
+                let notFirst = false;
+                for item in json.array
+                {
+                    if(notFirst)
+                        val ~= ",\n";
+                    else
+                        notFirst = true;
+                    //val ~= printOffset(offset+1);
+                    val ~= item.toString(offset+1, false);
+                }
+                val ~= "\n";
+                val ~= printOffset(offset);
             }
-            val ~= printOffset(offset);
-            val ~= "]\n";
+            val ~= "]";
         }
         JSON_TYPE::INT => {
             val ~= to!string(json.int);
@@ -370,7 +383,7 @@ def toString(ref json : JsonValue, const offset : i32) -> string{
 def printOffset(const offset : i32) -> string{
     let val = string::init;
     for i in 0 .. offset
-        val ~= "    ";
+        val ~= " ";
     return val;
 }
 
