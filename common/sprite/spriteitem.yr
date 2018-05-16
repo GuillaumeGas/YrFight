@@ -26,30 +26,30 @@ def loadFromJsonString(json : string) -> SpriteItem{
 def fromJson(json : JsonValue) -> SpriteItem{
     let spriteItm = SpriteItem::init;
     if(json.type == JSON_TYPE::OBJECT){
-        let name = json.obj["name"];
+        let name = ("name" in json.obj);
         if(name !is null)
             spriteItm.name = name.str;
-        let position = json.obj["position"];
+        let position = ("position" in json.obj);
         if(position !is null)
-            spriteItm.position.fromJson(position);
+            spriteItm.position.fromJson(*position);
     }
     return spriteItm;
 }
 
 def fromJson(ref rect : SDL_Rect, json : JsonValue){
     if(json.type == JSON_TYPE::OBJECT){
-        let x = json.obj["x"];
+        let x = ("x" in json.obj);
         if(x !is null)
-            rect.x = x.int;
-        let y = json.obj["y"];
+            rect.x = cast!i32(x.int);
+        let y = ("y" in json.obj);
         if(y !is null)
-            rect.y = y.int;
-        let w = json.obj["w"];
+            rect.y = cast!i32(y.int);
+        let w = ("w" in json.obj);
         if(w !is null)
-            rect.w = w.int;
-        let h = json.obj["h"];
+            rect.w = cast!i32(w.int);
+        let h = ("h" in json.obj);
         if(h !is null)
-            rect.h = h.int;        
+            rect.h = cast!i32(h.int);        
     }
 }
 

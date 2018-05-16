@@ -10,6 +10,7 @@ import common.sprite.animation;
 import common.resource;
 import common.lib.file;
 import common.lib.jsonParser;
+import common.lib.parser.parser;
 
 struct
 | spriteFrame : BTreeMap!(string,SpriteItem) 
@@ -52,9 +53,10 @@ def loadSpritePackage(path : string, renderer : p!SDL_Renderer) -> Sprite{
 def tryLoadJson(path : string) -> Sprite{
     let spriteObj = Sprite::init;
     if(path != ""){
-        spriteObj.filepath = path;//remove json extension here (string replace)
-        let json = parseJson(path);
+        let json = parseJson(path~".json");
+        println(json.toString());
         spriteObj = common::sprite::sprite::fromJson(json);
+        spriteObj.filepath = path;//remove json extension here (string replace)
     }
     return spriteObj;
 }
@@ -62,9 +64,12 @@ def tryLoadJson(path : string) -> Sprite{
 def fromJson(json : JsonValue) -> Sprite{
     let sprite = Sprite::init;
     if(json.type == JSON_TYPE::OBJECT){
-        let spriteItems = json.obj["spriteItems"];
-        for elem in spriteItems.array{
-            let item = common::sprite::spriteitem::fromJson(elem);
+        let spriteItems = ("spriteItems" in json.obj);
+        if(spriteItems !is null && spriteItems.type == JSON_TYPE::ARRAY){
+            for elem in spriteItems.array{
+                let item = common::sprite::spriteitem::fromJson(elem);
+                sprite.spriteFrame.insert(item.name, item);
+            }
         }
     }
     return sprite;
