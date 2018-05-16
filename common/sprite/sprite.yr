@@ -9,6 +9,7 @@ import common.sprite.spriteitem;
 import common.sprite.animation;
 import common.resource;
 import common.lib.file;
+import common.lib.jsonParser;
 
 struct
 | spriteFrame : BTreeMap!(string,SpriteItem) 
@@ -49,17 +50,21 @@ def loadSpritePackage(path : string, renderer : p!SDL_Renderer) -> Sprite{
 
 // return a sprite. If the file doesn't exist, an empty sprite will be returned with boolean load to false.
 def tryLoadJson(path : string) -> Sprite{
-    let sprite = Sprite::init;
+    let spriteObj = Sprite::init;
     if(path != ""){
-        sprite.filepath = path;//remove json extension here (string replace)
-        //TODO check if file exist
-        //sprite.load = true;
-        let file = File::init;
-        if (file.open (path ~ ".json", "r"))
-        {
-            let str = file.readString ();
-            //Parse json string
-            file.close();
+        spriteObj.filepath = path;//remove json extension here (string replace)
+        let json = parseJson(path);
+        spriteObj = common::sprite::sprite::fromJson(json);
+    }
+    return spriteObj;
+}
+
+def fromJson(json : JsonValue) -> Sprite{
+    let sprite = Sprite::init;
+    if(json.type == JSON_TYPE::OBJECT){
+        let spriteItems = json.obj["spriteItems"];
+        for elem in spriteItems.array{
+            let item = common::sprite::spriteitem::fromJson(elem);
         }
     }
     return sprite;
