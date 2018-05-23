@@ -105,11 +105,11 @@ def onQuit (ref editor : Editor)
 def onMouseMotion (ref editor : Editor, pos : (i32, i32))
 {
     let (x, y) = pos;
-    let newX = cast!i32((cast!i32(x/editor.screen.zoom))*editor.screen.zoom);
-    let newY = cast!i32((cast!i32(y/editor.screen.zoom))*editor.screen.zoom);
-    if(newX != editor.mouse.x || newY != editor.mouse.y){
-        editor.mouse.x = newX;
-        editor.mouse.y = newY;
+    x = editor.getUnZoomValue(x);
+    y = editor.getUnZoomValue(y);
+    if(x != editor.mouse.x || y != editor.mouse.y){
+        editor.mouse.x = x;
+        editor.mouse.y = y;
         if(editor.currentSelectedPos && x > editor.selection.x && y > editor.selection.y)
         {
             editor.selection.w = x-editor.selection.x;
@@ -121,6 +121,8 @@ def onMouseMotion (ref editor : Editor, pos : (i32, i32))
 def onMouseClick (ref editor : Editor, pos : (i32, i32))
 {
     let (x, y) = pos;
+    x = editor.getUnZoomValue(x);
+    y = editor.getUnZoomValue(y);
     // if nothing is selected
     if(!editor.currentSelectedPos){
         editor.selection.x = x;
@@ -131,10 +133,10 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     }else if(x > editor.selection.x && y > editor.selection.y){// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
         let spriteitem = SpriteItem::init;
-        spriteitem.position.x = cast!i32(editor.selection.x/editor.screen.zoom);
-        spriteitem.position.y = cast!i32(editor.selection.y/editor.screen.zoom);
-        spriteitem.position.w = cast!i32((x-editor.selection.x)/editor.screen.zoom);
-        spriteitem.position.h = cast!i32((y-editor.selection.y)/editor.screen.zoom);
+        spriteitem.position.x = editor.selection.x;
+        spriteitem.position.y = editor.selection.y;
+        spriteitem.position.w = x-editor.selection.x;
+        spriteitem.position.h = y-editor.selection.y;
         spriteitem.name = to!string(editor.sprite.spriteFrame.len);
         editor.sprite.addSpriteItem(spriteitem);
         println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
@@ -145,14 +147,20 @@ def drawSelection(ref editor : Editor){
     SDL_SetRenderDrawColor(editor.screen.renderer, cast!u8(237), cast!u8(28), cast!u8(36) , cast!u8(255));
     for key, value in editor.sprite.spriteFrame {
         let tmpVal = value;
-        tmpVal.position.x = cast!i32(value.position.x * editor.screen.zoom);
-        tmpVal.position.y = cast!i32(value.position.y * editor.screen.zoom);
-        tmpVal.position.w = cast!i32(value.position.w * editor.screen.zoom);
-        tmpVal.position.h = cast!i32(value.position.h * editor.screen.zoom);
+        tmpVal.position.x = editor.getZoomValue(value.position.x);
+        tmpVal.position.y = editor.getZoomValue(value.position.y);
+        tmpVal.position.w = editor.getZoomValue(value.position.w);
+        tmpVal.position.h = editor.getZoomValue(value.position.h);
         editor.drawRect(tmpVal.position);
     }
-    if(editor.currentSelectedPos)
-        editor.drawRect(editor.selection);   
+    if(editor.currentSelectedPos){
+        let tmpVal = editor.selection;
+        tmpVal.x = editor.getZoomValue(tmpVal.x);
+        tmpVal.y = editor.getZoomValue(tmpVal.y);
+        tmpVal.w = editor.getZoomValue(tmpVal.w);
+        tmpVal.h = editor.getZoomValue(tmpVal.h);
+        editor.drawRect(tmpVal); 
+    }  
 }
 
 def drawRect(ref editor : Editor, pos : SDL_Rect){
@@ -179,8 +187,8 @@ def drawRect(ref editor : Editor, pos : SDL_Rect){
 
 def drawMouse(ref editor : Editor){
     let pos = SDL_Rect::init;
-    pos.x = editor.mouse.x;
-    pos.y = editor.mouse.y;
+    pos.x = editor.getZoomValue(editor.mouse.x);
+    pos.y = editor.getZoomValue(editor.mouse.y);
     pos.w = cast!i32(editor.screen.zoom);
     pos.h = cast!i32(editor.screen.zoom);
     SDL_RenderFillRect(editor.screen.renderer, &(pos)); 
@@ -193,8 +201,6 @@ def onCancel(ref editor : Editor){
 
 def onZoomIn(ref editor : Editor){
     editor.screen.zoomIn();
-    editor.selection.x = cast!i32(editor.selection.x * (editor.screen.zoomStep + 1));
-    editor.selection.y = cast!i32(editor.selection.y * (editor.screen.zoomStep + 1));
 }
 
 def onZoomOut(ref editor : Editor){
@@ -205,4 +211,21 @@ def onSave(ref editor : Editor){
     let json = editor.sprite.toJson();
     if(writeJson(json, editor.sprite.filepath ~ ".json") == RetCode::Success)
         println("Sauvegarde effectuée");
+}
+
+def getZoomRoundPos(ref editor : Editor, val: i32, alreadyZoom: bool) -> i32
+{
+    if(alreadyZoom)
+        return editor.getZoomValue(editor.getUnZoomValue(val));
+    return editor.getZoomValue(val);
+}
+
+def getUnZoomValue(ref editor : Editor, val: i32) -> i32
+{
+    return cast!i32(val/editor.screen.zoom);
+}
+
+def getZoomValue(ref editor : Editor, val: i32) -> i32
+{
+    return cast!i32(val * editor.screen.zoom);
 }
