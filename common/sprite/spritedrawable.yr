@@ -1,7 +1,7 @@
 mod common.sprite.spritedrawable;
 
 import common.drawable;
-import common.sprite.sprite;
+import common.sprite.spriteitem;
 import common.lib.sdl;
 
 struct

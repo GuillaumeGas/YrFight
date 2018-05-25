@@ -118,7 +118,7 @@ def getDrawable(ref sprite : Sprite, spriteId : string, dst : SDL_Rect) -> Drawa
 
 def getSpriteDrawable(ref sprite : Sprite, spriteId : string) -> SpriteDrawable{
     let item = (spriteId in sprite.spriteFrame);
-    if(item !is null){
-        return SpriteDrawable{ item, sprite.getDrawable(spriteId, SDL_Rect{0,0,0,0}) };
-    return SpriteDrawable::init();
+    if(item !is null)
+        return SpriteDrawable{ *item, sprite.getDrawable(spriteId,SDL_Rect{0,0,0,0})};
+    return SpriteDrawable::init;
 }
