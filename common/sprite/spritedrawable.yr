@@ -1,0 +1,18 @@
+mod common.sprite.spritedrawable;
+
+import common.drawable;
+import common.sprite.sprite;
+import common.lib.sdl;
+
+struct
+| sprite : SpriteItem
+| drawable : Drawable
+ -> SpriteDrawable;
+
+def updatePosition(ref spritedraw : SpriteDrawable, dst : SDL_Rect){
+    spritedraw.drawable.dstpos = dst;
+}
+
+def getDrawable(ref spritedraw : SpriteDrawable) -> p!Drawable{
+    return &spritedraw.drawable;
+}

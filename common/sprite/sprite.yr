@@ -11,6 +11,8 @@ import common.resource;
 import common.lib.file;
 import common.lib.jsonParser;
 import common.lib.parser.parser;
+import common.drawable;
+import common.sprite.spritedrawable;
 
 struct
 | spriteFrame : BTreeMap!(string,SpriteItem) 
@@ -105,3 +107,18 @@ def toJsonFile(ref sprite : Sprite, path : string){
     }       
 }
 
+def getDrawable(ref sprite : Sprite, spriteId : string, dst : SDL_Rect) -> Drawable
+{
+    let item = (spriteId in sprite.spriteFrame);
+    if(item !is null){
+        return Drawable{ item.position, dst , getResourcesManager().getResource(sprite.filepath) };
+    }
+    return Drawable::init;
+}
+
+def getSpriteDrawable(ref sprite : Sprite, spriteId : string) -> SpriteDrawable{
+    let item = (spriteId in sprite.spriteFrame);
+    if(item !is null){
+        return SpriteDrawable{ item, sprite.getDrawable(spriteId, SDL_Rect{0,0,0,0}) };
+    return SpriteDrawable::init();
+}
