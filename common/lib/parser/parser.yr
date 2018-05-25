@@ -14,6 +14,7 @@ import common.lib.parser.tokenList;
 struct
 | lex : p!Lexer
 | root : JsonValue
+| error : bool
  -> Parser;
 
 def createParser (ref parser : Parser, lexer : p!Lexer)
@@ -42,7 +43,7 @@ def visitRoot (ref parser : Parser) -> JsonValue
         res.type = JSON_TYPE::ARRAY;
         res.array = parser.visitArray ();
     } else {
-        syntaxError (["object", "array"], token);
+        parser.syntaxError (["object", "array"], token);
     }
         
     return res;
@@ -54,7 +55,7 @@ def visitAccolContent (ref parser : Parser, ref jsonValue : JsonValue)
     let token = (*lex).next ();
 
     if (token.tokenType != TokenType::ACCOL_L)
-        syntaxError (["{"], token);
+        parser.syntaxError (["{"], token);
 
     token = (*lex).next ();
     
@@ -75,7 +76,7 @@ def visitAccolContent (ref parser : Parser, ref jsonValue : JsonValue)
     }
 
     if (token.tokenType != TokenType::ACCOL_R)
-        syntaxError (["}"], token);
+        parser.syntaxError (["}"], token);
 }
 
 def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
@@ -87,7 +88,7 @@ def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
     
     let token = (*lex).next ();
     if (token.tokenType != TokenType::COLON)
-        syntaxError ([":"], token);
+        parser.syntaxError ([":"], token);
 
     token = (*lex).next ();
     (*lex).rewind ();
@@ -103,7 +104,7 @@ def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
         }
         _ => {
             if (!parser.visitConst (objValue))
-                syntaxError (["array", "object", "string", "number"], token);
+                parser.syntaxError (["array", "object", "string", "number"], token);
         }
     }
 
@@ -116,18 +117,18 @@ def visitKey (ref parser : Parser) -> mut string
     let token = (*lex).next ();
     
     if (token.tokenType != TokenType::DOUBLE_QUOTE)
-        syntaxError (["\""], token);
+        parser.syntaxError (["\""], token);
 
     token = (*lex).next ();
 
     if (!isValidKey (token.value))
-        syntaxError (["a valid key"], token);
+        parser.syntaxError (["a valid key"], token);
     
     let key = token.value;
     
     token = (*lex).next ();
     if (token.tokenType != TokenType::DOUBLE_QUOTE)
-        syntaxError (["\""], token);
+        parser.syntaxError (["\""], token);
 
     return key;
 }
@@ -139,7 +140,7 @@ def visitArray (ref parser : Parser) -> Vector!JsonValue
     let token = (*lex).next ();
 
     if (token.tokenType != TokenType::BRACKET_L)
-        syntaxError (["["], token);
+        parser.syntaxError (["["], token);
 
     token = (*lex).next ();
     while (token.tokenType != TokenType::BRACKET_R && token.tokenType != TokenType::EOF)
@@ -160,7 +161,7 @@ def visitArray (ref parser : Parser) -> Vector!JsonValue
         else
         {
             if (!parser.visitConst (jsonValue))
-                syntaxError (["string", "integer", "float", "array"], token);
+                parser.syntaxError (["string", "integer", "float", "array"], token);
         }
 
         res.push (jsonValue);
@@ -174,7 +175,7 @@ def visitArray (ref parser : Parser) -> Vector!JsonValue
     }
 
     if (token.tokenType != TokenType::BRACKET_R)
-        syntaxError (["]"], token);
+        parser.syntaxError (["]"], token);
 
     return res;
 }
@@ -216,7 +217,7 @@ def visitQuotedString (ref parser : Parser, ref jsonValue : JsonValue) -> bool
     }
 
     if (token.tokenType != TokenType::DOUBLE_QUOTE)
-        syntaxError (["\""], token);
+        parser.syntaxError (["\""], token);
 
     jsonValue.type = JSON_TYPE::STRING;
     jsonValue.str = to!string (outbuf);
@@ -232,7 +233,7 @@ def visitInt (ref parser : Parser, ref jsonValue : JsonValue) -> bool
     let token = (*lex).next ();
 
     if (token.tokenType != TokenType::OTHER)
-        syntaxError (["quoted string", "integer", "float", "array", "object"], token);
+        parser.syntaxError (["quoted string", "integer", "float", "array", "object"], token);
 
     if (!isInt (token.value))
     {
@@ -281,7 +282,7 @@ def isValidKey (value : string) -> bool
     return true;
 }
 
-def syntaxError (expected : [string], found : Token)
+def syntaxError (ref parser : Parser, expected : [string], found : Token)
 {
     let str = "Syntax error : expected ";
 
@@ -295,7 +296,9 @@ def syntaxError (expected : [string], found : Token)
     if (found.tokenType != TokenType::EOF)
         str ~= " but '" ~ found.value ~ "' was found. Loc (" ~ to!string (found.location.line) ~ ", " ~ to!string (found.location.column) ~ ")";
 
-    assert (false, str);
+    println (str);
+    parser.error = true;
+    
 }
 
 def printJson (ref jsonValue : JsonValue)
