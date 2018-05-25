@@ -8,7 +8,7 @@ import common.lib.parser.parser;
 def parseJson (filePath : string) -> JsonValue
 {
     let lex = Lexer::init;
-    lex.createLexer (filePath);
+    if(lex.createLexer (filePath)){
     lex.setKeys (["{", "}", "[", "]", ":", "\"", ",", " ", "\n", "\r", "\t"]);
     lex.setSkips (["\n", " ", "\n", "\r", "\t"]);
     // lex.setComs ([("//", "\\n"), ("/*", "*/")]); // a corriger
@@ -19,9 +19,11 @@ def parseJson (filePath : string) -> JsonValue
     let ret = parser.parse ();
 
     // debug
-    // ret.print (); println ("");
+        // ret.print (); println ("");
 
-    return ret;
+        return ret;
+    }
+    return JsonValue::init;
 }
 
 /*

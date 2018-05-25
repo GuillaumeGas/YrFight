@@ -31,79 +31,87 @@ def writeJson (jsonValue : JsonValue, filePath : string) -> RetCode
 
 def write (ref file : File, jsonValue : JsonValue) -> RetCode
 {
-    let ret = RetCode::Success;
+    return file.write(jsonValue,0, false);
+}
 
-    if (jsonValue.type == JSON_TYPE::OBJECT)
-    {
-        if (fprintf (file.handle, "{\n".ptr) < 0)
-            return RetCode::WritingError;
-    }
-    
+def write (ref file : File, jsonValue : JsonValue, const offset : i32, const fromKey : bool) -> RetCode
+{
+    let ret = RetCode::Success;
     match (jsonValue.type)
     {
-        JSON_TYPE::OBJECT => ret = file.writeObject (jsonValue.obj);
-        JSON_TYPE::ARRAY => ret = file.writeArray (jsonValue.array);
+        JSON_TYPE::OBJECT => ret = file.writeObject (jsonValue.obj, offset, fromKey);
+        JSON_TYPE::ARRAY => ret = file.writeArray (jsonValue.array, offset, fromKey);
         JSON_TYPE::STRING => ret = file.writeString (jsonValue.str);
         JSON_TYPE::INT => ret = file.writeInt (jsonValue.int);
         JSON_TYPE::FLOAT => ret = file.writeFloat (jsonValue.float);
         _ => ret = RetCode::InvalidJsonType;
     }
-
+    
     if (ret != RetCode::Success)
         return ret;
-
-    if (jsonValue.type == JSON_TYPE::OBJECT)
-    {
-        if (fprintf (file.handle, "}\n".ptr) < 0)
-            return RetCode::WritingError;
-    }
-    
     return ret;
 }
 
-def writeObject (ref file : File, obj : BTreeMap!(string, JsonValue)) -> RetCode
+def writeObject (ref file : File, obj : BTreeMap!(string, JsonValue), const offset : i32, const fromKey : bool) -> RetCode
 {
+    if(!fromKey && offset != 0){
+        if (fprintf (file.handle, getOffset(offset).ptr) < 0)
+            return RetCode::WritingError;
+    }
+    if (fprintf (file.handle, "{".ptr) < 0)
+            return RetCode::WritingError;
     let count = 0;
     let size = obj.len;
-    for key, value in obj
-    {
-        if (fprintf (file.handle, "\"%s\" : ".ptr, key.ptr) < 0)
+    if(size > 0){
+        if (fprintf (file.handle, "\n".ptr) < 0)
             return RetCode::WritingError;
-        
-        let ret = file.write (value);
-        if (ret != RetCode::Success)
-            return ret;
-        
-        if (count < (size - 1U))
+        for key, value in obj
         {
-            if (fprintf (file.handle, ",\n".ptr) < 0)
+            if(count != 0){
+                if (fprintf (file.handle, ",\n".ptr) < 0)
+                    return RetCode::WritingError;
+            }
+            if (fprintf (file.handle, getOffset(offset+1).ptr) < 0)
+                    return RetCode::WritingError;
+            if (fprintf (file.handle, "\"%s\" : ".ptr, key.ptr) < 0)
                 return RetCode::WritingError;
-        }
-        else
-        {
-            if (fprintf (file.handle, "\n".ptr) < 0)
-                return RetCode::WritingError;
-        }
-                count++;
+            let lineSize = cast!i32((key ~ " : ").len)+2;// we count also the '"'
+            let ret = file.write (value, offset+lineSize+1, true);
+            if (ret != RetCode::Success)
+                return ret;
+            count++;
 
+        }
+        if (fprintf (file.handle, ("\n"~getOffset(offset)).ptr) < 0)
+            return RetCode::WritingError;
     }
+    if (fprintf (file.handle, "}".ptr) < 0)
+            return RetCode::WritingError;
     
     return RetCode::Success;
 }
 
-def writeArray (ref file : File, array : Vector!(JsonValue)) -> RetCode
+def writeArray (ref file : File, array : Vector!(JsonValue), const offset : i32, const fromKey : bool) -> RetCode
 {
+    if(!fromKey && offset != 0){
+        if (fprintf (file.handle, getOffset(offset).ptr) < 0)
+            return RetCode::WritingError;
+    }
     if (fprintf (file.handle, "[".ptr) < 0)
         return RetCode::WritingError;    
-
-    for i in 0U .. array.len
-    {
-        file.write (array[i]);
-        if (i < (array.len - 1U))
+    if(array.len > 0){
+        if (fprintf (file.handle, "\n".ptr) < 0)
+            return RetCode::WritingError;
+        for i in 0U .. array.len
         {
-            if (fprintf (file.handle, ", ".ptr) < 0)
-                return RetCode::WritingError;
-        }   
+            if(i != 0){
+                if (fprintf (file.handle, ",\n".ptr) < 0)
+                    return RetCode::WritingError;
+            }
+            file.write (array[i], offset+1, false); 
+        }
+        if (fprintf (file.handle, ("\n"~getOffset(offset)).ptr) < 0)
+            return RetCode::WritingError;
     }
     
     if (fprintf (file.handle, "]".ptr) < 0)
@@ -134,4 +142,12 @@ def writeFloat (ref file : File, value : f64) -> RetCode
         return RetCode::WritingError;
     
     return RetCode::Success;
+}
+
+
+def getOffset(const offset : i32) -> string{
+    let val = string::init;
+    for i in 0 .. offset
+        val ~= " ";
+    return val;
 }

@@ -21,16 +21,19 @@ struct
 | commentsEnabled : bool
  -> Lexer;
 
-def createLexer (ref lexer : Lexer, filePath : string)
+def createLexer (ref lexer : Lexer, filePath : string) -> bool
 {
-    if (!lexer.file.open (filePath, "r"))
-        assert (false, "createLexer() : File open error");
+    if (!lexer.file.open (filePath, "r")){
+        println ("createLexer() : File open error");
+        return false;
+    }
 
     lexer.eof = false;
     lexer.currentLocation.line = 1;
     lexer.currentLocation.column = 1;
     lexer.newLine = true;
     lexer.commentsEnabled = false;
+    return true;
 }
 
 def setKeys (ref lexer : Lexer, keys : [string])
