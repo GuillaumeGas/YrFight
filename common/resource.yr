@@ -2,7 +2,7 @@ mod common.resource;
 
 extern (C) printf (const c : p!char, ...);
 
-import std.list;
+import std.map;
 import std.memory;
 
 import core.io;
@@ -22,7 +22,7 @@ struct
 private
 {
     struct
-    | resourceList : List!Resource // a convertir en dictionnaire
+    | resourceList : BTreeMap!(string,Resource)
      -> ResourcesManager;
 
 
@@ -44,7 +44,7 @@ private
     {
         if (gResourcesManagerInstance is null)
         {
-            gResourcesManagerInstance = alloc (ResourcesManager{ list!Resource () });
+            gResourcesManagerInstance = alloc (ResourcesManager::init);
             return gResourcesManagerInstance;
         }
         else
@@ -83,7 +83,7 @@ def addResource(ref manager : p!ResourcesManager, path : string, renderer : p!SD
                 printSdlErr ("SDL_QueryTexture error");
                 assert (false);
             }else{
-                manager.resourceList.push(res);
+                manager.resourceList.insert(path, res);
             }
         }
         SDL_FreeSurface (surface);        
@@ -92,17 +92,5 @@ def addResource(ref manager : p!ResourcesManager, path : string, renderer : p!SD
 
 def getResource (resManager : const p!ResourcesManager, path : string) -> p!Resource
 {
-    let resList = resManager.resourceList;
-    
-    let next_ = resList.next ();
-    while (next_ !is null)
-    {
-        let res = next_.value;
-        if (res.file == path)
-        {
-            return &next_.value;
-        }
-        next_ = next(next_);
-    }    
-    return null;
+    return (path in resManager.resourceList);    
 }
