@@ -1,7 +1,7 @@
 mod common.sprite.animation;
 
 import std.list;
-import common.sprite.spriteitem;
+import common.sprite.sprite;
 
 struct
 | spriteId : string
@@ -14,9 +14,9 @@ struct
 | canLoop : bool
  -> Animation;
 
-def addFrame(ref anim : Animation, spriteItm : p!SpriteItem, delay : u16){
-    if(spriteItm !is null){
-        anim.frames.push(Frame{spriteItm.name, delay});
+def addFrame(ref anim : Animation, sprite : p!Sprite, delay : u16){
+    if(sprite !is null){
+        anim.frames.push(Frame{sprite.name, delay});
     }
 }
 

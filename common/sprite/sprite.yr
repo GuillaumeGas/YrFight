@@ -1,86 +1,56 @@
 mod common.sprite.sprite;
 
-import std.map;
-import std.json;
-import std.vec;
-
 import common.lib.sdl;
-import common.sprite.spriteitem;
-import common.sprite.animation;
-import common.resource;
-import common.lib.file;
-import common.lib.jsonParser;
-import common.lib.parser.parser;
-import common.drawable;
-import common.sprite.spritedrawable;
+import std.list;
+import std.json;
+import std.map;
 
 struct
-| spriteFrame : BTreeMap!(string,SpriteItem) 
-| animations : BTreeMap!(string,Animation)
-| filepath : string
-| load : bool
+| name : string
+| position : SDL_Rect
+| hitboxes : List!SDL_Rect
  -> Sprite;
 
 // Sprite
-def addSpriteItem(ref sprite : Sprite, item : SpriteItem){
-    sprite.spriteFrame.insert(item.name,item);
-    for key, value in sprite.spriteFrame {
-        println("Box ", key, ": ", value.position.x, ", ", value.position.y, ", ", value.position.w, ", ", value.position.h);
-    }
+def addHitbox(ref sprite : Sprite, rect : SDL_Rect){
+    sprite.hitboxes.push(rect);
 }
 
-def removeSpriteItem(ref sprite : Sprite, id : string){
-    sprite.spriteFrame.remove(id);
+def removeHitbox(ref sprite : Sprite, rect : SDL_Rect){
 }
 
-def addAnimation(ref sprite : Sprite, anim : Animation){
-    sprite.animations.insert(anim.name,anim);
-}
-
-def removeAnimation(ref sprite : Sprite, id : string){
-    sprite.animations.remove(id);
-}
-
-def loadSpritePackage(path : string, renderer : p!SDL_Renderer) -> Sprite{
-    //path to the .sprt (renamed zip) file
-    //uncompress
-    let jsonPath = "";
-    let sprite = tryLoadJson(jsonPath);
-    if(renderer !is null)
-        sprite.loadResource(renderer);
-    return sprite;    
-}
-
-// return a sprite. If the file doesn't exist, an empty sprite will be returned with boolean load to false.
-def tryLoadJson(path : string) -> Sprite{
-    let spriteObj = Sprite::init;
-    if(path != ""){
-        let json = parseJson(path~".json");
-        println(json.toString());
-        spriteObj = common::sprite::sprite::fromJson(json);
-        spriteObj.filepath = path;//remove json extension here (string replace)
-    }
-    return spriteObj;
+def loadFromJsonString(json : string) -> Sprite{
+    return Sprite::init;
 }
 
 def fromJson(json : JsonValue) -> Sprite{
     let sprite = Sprite::init;
     if(json.type == JSON_TYPE::OBJECT){
-        let spriteItems = ("spriteItems" in json.obj);
-        if(spriteItems !is null && spriteItems.type == JSON_TYPE::ARRAY){
-            for elem in spriteItems.array{
-                let item = common::sprite::spriteitem::fromJson(elem);
-                sprite.spriteFrame.insert(item.name, item);
-            }
-        }
+        let name = ("name" in json.obj);
+        if(name !is null)
+            sprite.name = name.str;
+        let position = ("position" in json.obj);
+        if(position !is null)
+            sprite.position.fromJson(*position);
     }
     return sprite;
 }
 
-// init the resource in the manager
-def loadResource(ref sprite : Sprite, renderer : p!SDL_Renderer) -> bool{
-    getResourcesManager().addResource(sprite.filepath,renderer);
-    return getResourcesManager().getResource(sprite.filepath) !is null;
+def fromJson(ref rect : SDL_Rect, json : JsonValue){
+    if(json.type == JSON_TYPE::OBJECT){
+        let x = ("x" in json.obj);
+        if(x !is null)
+            rect.x = cast!i32(x.int);
+        let y = ("y" in json.obj);
+        if(y !is null)
+            rect.y = cast!i32(y.int);
+        let w = ("w" in json.obj);
+        if(w !is null)
+            rect.w = cast!i32(w.int);
+        let h = ("h" in json.obj);
+        if(h !is null)
+            rect.h = cast!i32(h.int);        
+    }
 }
 
 def toJson(ref sprite : Sprite) -> JsonValue
@@ -88,37 +58,40 @@ def toJson(ref sprite : Sprite) -> JsonValue
     let json = JsonValue::init;
     json.type = JSON_TYPE::OBJECT;
     
-    let spriteItemJson = JsonValue::init;
-    spriteItemJson.type = JSON_TYPE::ARRAY;        
-    for key, value in sprite.spriteFrame{
-        spriteItemJson.array.push(value.toJson());
-    }
+    let name = JsonValue::init;
+    name.type = JSON_TYPE::STRING;
+    name.str = sprite.name;
+    json.obj.insert("name", name);
     
-    json.obj.insert("spriteItems", spriteItemJson);
+    json.obj.insert("position", sprite.position.toJson());
+    
     return json;
 }
 
-
-def toJsonFile(ref sprite : Sprite, path : string){
-    let file = File::init;
-    if(file.open( path, "w")){        
-        let json = sprite.toJson();
-        file.close();
-    }       
-}
-
-def getDrawable(ref sprite : Sprite, spriteId : string, dst : SDL_Rect) -> Drawable
+def toJson(ref rect : SDL_Rect) -> JsonValue
 {
-    let item = (spriteId in sprite.spriteFrame);
-    if(item !is null){
-        return Drawable{ item.position, dst , getResourcesManager().getResource(sprite.filepath) };
-    }
-    return Drawable::init;
-}
+    let json = JsonValue::init;
+    json.type = JSON_TYPE::OBJECT;
 
-def getSpriteDrawable(ref sprite : Sprite, spriteId : string) -> SpriteDrawable{
-    let item = (spriteId in sprite.spriteFrame);
-    if(item !is null)
-        return SpriteDrawable{ *item, sprite.getDrawable(spriteId,SDL_Rect{0,0,0,0})};
-    return SpriteDrawable::init;
+    let x = JsonValue::init;
+    x.type = JSON_TYPE::INT;
+    x.int = rect.x;
+    json.obj.insert("x", x);
+
+    let y = JsonValue::init;
+    y.type = JSON_TYPE::INT;
+    y.int = rect.y;
+    json.obj.insert("y", y);
+
+    let w = JsonValue::init;
+    w.type = JSON_TYPE::INT;
+    w.int = rect.w;
+    json.obj.insert("w", w);
+
+    let h = JsonValue::init;
+    h.type = JSON_TYPE::INT;
+    h.int = rect.h;
+    json.obj.insert("h", h);
+
+    return json;
 }

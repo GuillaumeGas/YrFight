@@ -11,8 +11,8 @@ import common.lib.sdl;
 import common.resource;
 import editor.eventHandler;
 import common.drawable;
+import common.sprite.spritesheet;
 import common.sprite.sprite;
-import common.sprite.spriteitem;
 import common.lib.parser.parser;
 import common.lib.jsonWriter;
 
@@ -24,7 +24,7 @@ struct
 | mouse : SDL_Point
 | currentSelectedPos : bool
 | drawable : Drawable
-| sprite : Sprite
+| spritesheet : SpriteSheet
  -> Editor;
 
 cte gWindowWidth = 640;
@@ -43,8 +43,8 @@ def createEditor (ref editor : Editor, width : u32, height : u32)
 def createEditor (ref editor : Editor, filepath : string)
 {
     editor.createEditor (cast!u32 (gWindowWidth), cast!u32 (gWindowHeight));
-    editor.sprite = tryLoadJson(filepath);
-    editor.sprite.loadResource(editor.screen.renderer);
+    editor.spritesheet = tryLoadJson(filepath);
+    editor.spritesheet.loadResource(editor.screen.renderer);
     //we must resize the window to the size of the sprite or the max size of the screen
     editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
     editor.screen.addDrawable(&(editor.drawable));
@@ -132,20 +132,20 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
         editor.currentSelectedPos = true;
     }else if(x > editor.selection.x && y > editor.selection.y){// we add a new SpriteItem to the Sprite and we reset the selection
         editor.currentSelectedPos = false;
-        let spriteitem = SpriteItem::init;
-        spriteitem.position.x = editor.selection.x;
-        spriteitem.position.y = editor.selection.y;
-        spriteitem.position.w = x-editor.selection.x;
-        spriteitem.position.h = y-editor.selection.y;
-        spriteitem.name = to!string(editor.sprite.spriteFrame.len);
-        editor.sprite.addSpriteItem(spriteitem);
-        println("Rect ", spriteitem.position.x, ", ", spriteitem.position.y, ", ", x, ", ", y);
+        let sprite = Sprite::init;
+        sprite.position.x = editor.selection.x;
+        sprite.position.y = editor.selection.y;
+        sprite.position.w = x-editor.selection.x;
+        sprite.position.h = y-editor.selection.y;
+        sprite.name = to!string(editor.spritesheet.sprites.len);
+        editor.spritesheet.addSprite(sprite);
+        println("Rect ", sprite.position.x, ", ", sprite.position.y, ", ", x, ", ", y);
     }
 }
 
 def drawSelection(ref editor : Editor){
     SDL_SetRenderDrawColor(editor.screen.renderer, cast!u8(237), cast!u8(28), cast!u8(36) , cast!u8(255));
-    for key, value in editor.sprite.spriteFrame {
+    for key, value in editor.spritesheet.sprites {
         let tmpVal = value;
         tmpVal.position.x = editor.getZoomValue(value.position.x);
         tmpVal.position.y = editor.getZoomValue(value.position.y);
@@ -208,24 +208,24 @@ def onZoomOut(ref editor : Editor){
 }
 
 def onSave(ref editor : Editor){
-    let json = editor.sprite.toJson();
-    if(writeJson(json, editor.sprite.filepath ~ ".json") == RetCode::Success)
+    let json = editor.spritesheet.toJson();
+    if(writeJson(json, editor.spritesheet.filepath ~ ".json") == RetCode::Success)
         println("Sauvegarde effectuée");
 }
 
-def getZoomRoundPos(ref editor : Editor, val: i32, alreadyZoom: bool) -> i32
+def getZoomRoundPos(ref editor : Editor, val : i32, alreadyZoom : bool) -> i32
 {
     if(alreadyZoom)
         return editor.getZoomValue(editor.getUnZoomValue(val));
     return editor.getZoomValue(val);
 }
 
-def getUnZoomValue(ref editor : Editor, val: i32) -> i32
+def getUnZoomValue(ref editor : Editor, val : i32) -> i32
 {
     return cast!i32(val/editor.screen.zoom);
 }
 
-def getZoomValue(ref editor : Editor, val: i32) -> i32
+def getZoomValue(ref editor : Editor, val : i32) -> i32
 {
     return cast!i32(val * editor.screen.zoom);
 }

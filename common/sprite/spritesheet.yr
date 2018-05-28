@@ -1,0 +1,124 @@
+mod common.sprite.spritesheet;
+
+import std.map;
+import std.json;
+import std.vec;
+
+import common.lib.sdl;
+import common.sprite.sprite;
+import common.sprite.animation;
+import common.resource;
+import common.lib.file;
+import common.lib.jsonParser;
+import common.lib.parser.parser;
+import common.drawable;
+import common.sprite.spritedrawable;
+
+struct
+| sprites : BTreeMap!(string,Sprite) 
+| animations : BTreeMap!(string,Animation)
+| filepath : string
+| load : bool
+ -> SpriteSheet;
+
+// SpriteSheet
+def addSprite(ref spritesheet : SpriteSheet, sprite : Sprite){
+    spritesheet.sprites.insert(sprite.name,sprite);
+    for key, value in spritesheet.sprites {
+        println("Box ", key, ": ", value.position.x, ", ", value.position.y, ", ", value.position.w, ", ", value.position.h);
+    }
+}
+
+def removeSprite(ref spritesheet : SpriteSheet, id : string){
+    spritesheet.sprites.remove(id);
+}
+
+def addAnimation(ref spritesheet : SpriteSheet, anim : Animation){
+    spritesheet.animations.insert(anim.name,anim);
+}
+
+def removeAnimation(ref spritesheet : SpriteSheet, id : string){
+    spritesheet.animations.remove(id);
+}
+
+def loadSpritePackage(path : string, renderer : p!SDL_Renderer) -> SpriteSheet{
+    //path to the .sprt (renamed zip) file
+    //uncompress
+    let jsonPath = "";
+    let spritesheet = tryLoadJson(jsonPath);
+    if(renderer !is null)
+        spritesheet.loadResource(renderer);
+    return spritesheet;    
+}
+
+// return a sprite. If the file doesn't exist, an empty sprite will be returned with boolean load to false.
+def tryLoadJson(path : string) -> SpriteSheet{
+    let sheet = SpriteSheet::init;
+    if(path != ""){
+        let json = parseJson(path~".json");
+        println(json.toString());
+        sheet = common::sprite::spritesheet::fromJson(json);
+        sheet.filepath = path;//remove json extension here (string replace)
+    }
+    return sheet;
+}
+
+def fromJson(json : JsonValue) -> SpriteSheet{
+    let spritesheet = SpriteSheet::init;
+    if(json.type == JSON_TYPE::OBJECT){
+        let sprites = ("sprites" in json.obj);
+        if(sprites !is null && sprites.type == JSON_TYPE::ARRAY){
+            for elem in sprites.array{
+                let sprite = common::sprite::sprite::fromJson(elem);
+                spritesheet.sprites.insert(sprite.name, sprite);
+            }
+        }
+    }
+    return spritesheet;
+}
+
+// init the resource in the manager
+def loadResource(ref spritesheet : SpriteSheet, renderer : p!SDL_Renderer) -> bool{
+    getResourcesManager().addResource(spritesheet.filepath,renderer);
+    return getResourcesManager().getResource(spritesheet.filepath) !is null;
+}
+
+def toJson(ref spritesheet : SpriteSheet) -> JsonValue
+{
+    let json = JsonValue::init;
+    json.type = JSON_TYPE::OBJECT;
+    
+    let spritesJson = JsonValue::init;
+    spritesJson.type = JSON_TYPE::ARRAY;        
+    for key, value in spritesheet.sprites{
+        spritesJson.array.push(value.toJson());
+    }
+    
+    json.obj.insert("sprites", spritesJson);
+    return json;
+}
+
+
+def toJsonFile(ref spritesheet : SpriteSheet, path : string){
+    let file = File::init;
+    if(file.open( path, "w")){        
+        let json = spritesheet.toJson();
+        file.close();
+    }       
+}
+
+def getDrawable(ref spritesheet : SpriteSheet, spriteId : string, dst : SDL_Rect) -> Drawable
+{
+    let sprite = (spriteId in spritesheet.sprites);
+    if(sprite !is null){
+        return Drawable{ sprite.position, dst , getResourcesManager().getResource(spritesheet.filepath) };
+    }
+    return Drawable::init;
+}
+
+def getSpriteDrawable(ref spritesheet : SpriteSheet, spriteId : string) -> SpriteDrawable{
+    let sprite = (spriteId in spritesheet.sprites);
+    if(sprite !is null)
+        return SpriteDrawable{ *sprite, spritesheet.getDrawable(spriteId,SDL_Rect{0,0,0,0})};
+    return SpriteDrawable::init;
+}
