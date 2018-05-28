@@ -22,7 +22,7 @@ struct
 struct
 | type : u32
 | buttonCode : u8
-| signal : Signal!(ref Game, t!(i32, i32))
+| signal : Signal!(ref Game, (i32, i32))
  -> MouseEvent;
 
 struct
@@ -59,7 +59,7 @@ def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, keyScanCode
     eventHdl.keyboardWithKeyRepeatEvents.push (KeyboardEvent { eventType, keyScanCode, signal });
 }
 
-def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, buttonCode : SDL_Mousecode, signal : Signal!(ref Game, t!(i32, i32)))
+def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, buttonCode : SDL_Mousecode, signal : Signal!(ref Game, (i32, i32)))
 {
     eventHdl.mouseEvents.push (MouseEvent { eventType, buttonCode, signal });
 }
@@ -155,7 +155,7 @@ def handleKeyboardWithKeyRepeatEvent (ref eventHdl : EventHandler, eventType : u
     return ret;
 }
 
-def handleMouseEvent (ref eventHdl : EventHandler, eventType : u32, buttonCode : u8, pos : t!(i32, i32))
+def handleMouseEvent (ref eventHdl : EventHandler, eventType : u32, buttonCode : u8, pos : (i32, i32))
 {
     let next_ = eventHdl.mouseEvents.next();
     while (next_ !is null)

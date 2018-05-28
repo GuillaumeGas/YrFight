@@ -6,6 +6,9 @@ import std.math;
 
 import common.lib.sdl;
 import common.resource;
+import common.sprite.spritemanager;
+import common.sprite.spritedrawable;
+import common.sprite.spritesheet;
 import common.drawable;
 
 import game.collision;
@@ -13,7 +16,7 @@ import game.movement;
 
 struct
 | name : string
-| body : Drawable
+| body : SpriteDrawable
 | speedX : i32
 | speedY : i32
 | isJumping : bool
@@ -28,12 +31,13 @@ private
     cte gVerticalSpeed = 1;
     cte gMaxJumpsCount = 2;
     cte img = "img/test.png";
+    cte spriteId = "0";
 }
 
 def createPlayer (name : string, const posX : i32, const posY : i32) -> Player
 {
-    let bodyRes = getResourcesManager ().getResource (img);
-    let body = Drawable { Position { posX, posY }, bodyRes };
+    let spriteSheet = getSpriteSheetsManager ().getSpriteSheet (img);
+    let body = (*spriteSheet).getSpriteDrawable(spriteId);
     let linearMovement = createLinearMovement (posX, posY);
     return Player { name, body, 0, 0, false, 0, linearMovement, ParabolicMovement::init };
 }
@@ -41,7 +45,7 @@ def createPlayer (name : string, const posX : i32, const posY : i32) -> Player
 def getDrawables (ref player : Player) -> mut List!(p!Drawable)
 {
     let res = list!(p!Drawable) ();
-    res.push (&(player.body));
+    res.push (&(player.body.drawable));
     return res;
 }
 
@@ -51,10 +55,10 @@ def jump (ref player : Player)
     {
         player.isJumping = true;
         if (player.speedX == 0)
-            player.parabolicMovement.start (player.body.pos.x, player.body.pos.y, gVerticalSpeed, cast!f32 (Math::PI / 2));
+            player.parabolicMovement.start (player.body.drawable.dstpos.x, player.body.drawable.dstpos.y, gVerticalSpeed, cast!f32 (Math::PI / 2));
         else
         {
-            player.parabolicMovement.start (player.body.pos.x, player.body.pos.y, player.linearMovement.speedX, cast!f32 (Math::PI / 3));
+            player.parabolicMovement.start (player.body.drawable.dstpos.x, player.body.drawable.dstpos.y, player.linearMovement.speedX, cast!f32 (Math::PI / 3));
         }
         player.jumpsCount++;
     }
@@ -63,7 +67,7 @@ def jump (ref player : Player)
 def stopJumping (ref player : Player)
 {
     player.isJumping = false;
-    player.linearMovement.start (player.body.pos.x, player.body.pos.y);    
+    player.linearMovement.start (player.body.drawable.dstpos.x, player.body.drawable.dstpos.y);    
 }
 
 def fall (ref player : Player)
@@ -140,8 +144,8 @@ def goLeft (ref player : Player)
 
 def goTo (ref player : Player, posX : i32, posY : i32)
 {
-    player.body.pos.x = posX;
-    player.body.pos.y = posY;
+    player.body.drawable.dstpos.x = posX;
+    player.body.drawable.dstpos.y = posY;
 }
 
 def passRow (ref player : Player)
@@ -149,8 +153,8 @@ def passRow (ref player : Player)
     if (!player.isJumping)
     {
         let (x, y) = player.linearMovement.nextPosition ();
-        player.speedX = x - player.body.pos.x;
-        player.speedY = y - player.body.pos.y;
+        player.speedX = x - player.body.drawable.dstpos.x;
+        player.speedY = y - player.body.drawable.dstpos.y;
         player.goTo (x, y);
 
         player.fall ();
@@ -164,8 +168,8 @@ def passRow (ref player : Player)
 def passRowJump (ref player : Player)
 {
     let (x, y) = player.parabolicMovement.nextPosition ();
-    let diffX = x - player.body.pos.x;
-    let diffY = y - player.body.pos.y;
+    let diffX = x - player.body.drawable.dstpos.x;
+    let diffY = y - player.body.drawable.dstpos.y;
     
     let colManager = getCollisionManager ();
     let collided = false;

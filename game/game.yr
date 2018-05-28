@@ -10,6 +10,8 @@ import common.lib.sdl;
 import common.screen;
 import common.eventHandler;
 import common.resource;
+import common.sprite.spritesheet;
+import common.sprite.spritemanager;
 
 import game.player;
 import game.collision;
@@ -40,6 +42,7 @@ def createGame (ref game : Game)
     game.continue = true;
 
     getResourcesManager ().addResource (img, game.screen.renderer);
+    getSpriteSheetsManager ().addSpriteSheet(tryLoadJson(img));
     createCollisionManager (gWindowWidth, gWindowHeight);
     
     game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY);
@@ -49,8 +52,8 @@ def createGame (ref game : Game)
     game.screen.addDrawables (game.testPlayer.getDrawables ());
 
     let colManager = getCollisionManager ();
-    colManager.addObject (&(game.mainPlayer.body));
-    colManager.addObject (&(game.testPlayer.body));
+    colManager.addObject (&(game.mainPlayer.body.drawable));
+    colManager.addObject (&(game.testPlayer.body.drawable));
     
     initEvents (game.eventHdl);
 }

@@ -1,0 +1,53 @@
+mod common.sprite.spritemanager;
+
+import std.map;
+import std.memory;
+
+import common.sprite.spritesheet;
+
+private
+{
+    struct
+    | spritesheets : BTreeMap!(string,SpriteSheet)
+     -> SpriteSheetsManager;
+
+    static spriteSheetsManagerInstance : p!SpriteSheetsManager;
+
+    self ()
+    {
+        spriteSheetsManagerInstance = null;
+    }
+
+    def createSpriteSheetsManager () -> p!SpriteSheetsManager
+    {
+        if (spriteSheetsManagerInstance is null)
+        {
+            spriteSheetsManagerInstance = alloc (SpriteSheetsManager::init);
+            return spriteSheetsManagerInstance;
+        }
+        else
+        {
+            println ("You cannot have two instances of a SpriteSheetsManager !");
+            assert (false);
+        }  
+    }
+}
+
+def getSpriteSheetsManager () -> p!SpriteSheetsManager
+{
+    if (spriteSheetsManagerInstance is null)
+    {
+       createSpriteSheetsManager();
+    }
+    return spriteSheetsManagerInstance;
+}
+
+def addSpriteSheet(ref manager : p!SpriteSheetsManager, spritesheet : SpriteSheet){
+    manager.spritesheets.insert(spritesheet.filepath, spritesheet);
+}
+
+def getSpriteSheet (ref manager : const p!SpriteSheetsManager, path : string) -> p!SpriteSheet
+{
+    return (path in manager.spritesheets);    
+}
+

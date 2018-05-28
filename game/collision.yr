@@ -36,9 +36,9 @@ private
         let next_ = colManager.objects.next ();
         while (next_ !is null)
         {
-            if (next_.value !is &(player.body))
+            if (next_.value !is &(player.body.drawable))
             {
-                if (collides (&(player.body), speed, direction, next_.value))
+                if (collides (&(player.body.drawable), speed, direction, next_.value))
                     return true;
             }
             
@@ -49,8 +49,8 @@ private
 
     def collides (objectA : p!Drawable, speed : i32, const direction : Direction, objectB : p!Drawable) -> bool
     {
-        let rectA = SDL_Rect { objectA.pos.x, objectA.pos.y, objectA.res.width, objectA.res.height };
-        let rectB = SDL_Rect { objectB.pos.x, objectB.pos.y, objectB.res.width, objectB.res.height };
+        let rectA = SDL_Rect { objectA.dstpos.x, objectA.dstpos.y, objectA.res.width, objectA.res.height };
+        let rectB = SDL_Rect { objectB.dstpos.x, objectB.dstpos.y, objectB.res.width, objectB.res.height };
 
         match (direction)
         {
@@ -113,9 +113,9 @@ def addObjects (colManager : p!CollisionManager, drawables : List!(p!Drawable))
 def canGoRight (colManager : p!CollisionManager, ref player : Player, speed : i32) -> bool
 {
     let background = colManager.background;
-    let drawable = player.body;
+    let drawable = player.body.drawable;
 
-    let nextPosX = drawable.pos.x + speed;
+    let nextPosX = drawable.dstpos.x + speed;
     
     if ((nextPosX + drawable.res.width) >= background.w)
         return false;
@@ -126,9 +126,9 @@ def canGoRight (colManager : p!CollisionManager, ref player : Player, speed : i3
 def canGoLeft (colManager : p!CollisionManager, ref player : Player, speed : i32) -> bool
 {
     let background = colManager.background;
-    let drawable = player.body;
+    let drawable = player.body.drawable;
 
-    let nextPosX = drawable.pos.x - speed;
+    let nextPosX = drawable.dstpos.x - speed;
     
     if (nextPosX <= 0)
         return false;
@@ -139,9 +139,9 @@ def canGoLeft (colManager : p!CollisionManager, ref player : Player, speed : i32
 def canGoDown (colManager : p!CollisionManager, ref player : Player, speed : i32) -> bool
 {
     let background = colManager.background;
-    let drawable = player.body;
+    let drawable = player.body.drawable;
 
-    let nextPosY = drawable.pos.y + speed;
+    let nextPosY = drawable.dstpos.y + speed;
     
     if ((nextPosY + drawable.res.height) >= background.h)
         return false;
