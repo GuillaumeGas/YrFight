@@ -16,3 +16,12 @@ def updatePosition(ref spritedraw : SpriteDrawable, dst : SDL_Rect){
 def getDrawable(ref spritedraw : SpriteDrawable) -> p!Drawable{
     return &spritedraw.drawable;
 }
+
+def setPosition(ref spritedraw : SpriteDrawable, x : i32, y : i32){
+    spritedraw.drawable.dstpos.x = x;
+    spritedraw.drawable.dstpos.y = y;
+}
+
+def getPosition(ref spritedraw : SpriteDrawable) -> (i32, i32){
+    return (spritedraw.drawable.dstpos.x,spritedraw.drawable.dstpos.y);
+}

@@ -74,7 +74,7 @@ def clear (ref screen : Screen)
 }
 
 def draw (ref screen : Screen)
-{
+{    
     let next_ = screen.drawables.next ();
     while (next_ !is null)
     {

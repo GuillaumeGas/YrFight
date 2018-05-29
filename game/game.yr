@@ -42,7 +42,7 @@ def createGame (ref game : Game)
     game.continue = true;
 
     getResourcesManager ().addResource (img, game.screen.renderer);
-    getSpriteSheetsManager ().addSpriteSheet(tryLoadJson(img));
+    getSpriteSheetsManager ().addSpriteSheet("player", tryLoadJson(img));
     createCollisionManager (gWindowWidth, gWindowHeight);
     
     game.mainPlayer = createPlayer (gPlayerName.dup(), gDefaultPosX, gDefaultPosY);
@@ -70,7 +70,8 @@ def start (ref game : Game)
         
         game.eventHdl.handleEvents ();
         game.passRow ();
-        
+
+        screen.draw();
         screen.display();
         SDL_Delay (8u);
     }

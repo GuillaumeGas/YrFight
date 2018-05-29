@@ -42,12 +42,12 @@ def getSpriteSheetsManager () -> p!SpriteSheetsManager
     return spriteSheetsManagerInstance;
 }
 
-def addSpriteSheet(ref manager : p!SpriteSheetsManager, spritesheet : SpriteSheet){
-    manager.spritesheets.insert(spritesheet.filepath, spritesheet);
+def addSpriteSheet(ref manager : p!SpriteSheetsManager,id : string, spritesheet : SpriteSheet){
+    manager.spritesheets.insert(id, spritesheet);
 }
 
-def getSpriteSheet (ref manager : const p!SpriteSheetsManager, path : string) -> p!SpriteSheet
+def getSpriteSheet (ref manager : const p!SpriteSheetsManager, id : string) -> p!SpriteSheet
 {
-    return (path in manager.spritesheets);    
+    return (id in manager.spritesheets);    
 }
 

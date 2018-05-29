@@ -30,13 +30,12 @@ private
     cte gHorizontalSpeed = 1;
     cte gVerticalSpeed = 1;
     cte gMaxJumpsCount = 2;
-    cte img = "img/test.png";
     cte spriteId = "0";
 }
 
 def createPlayer (name : string, const posX : i32, const posY : i32) -> Player
 {
-    let spriteSheet = getSpriteSheetsManager ().getSpriteSheet (img);
+    let spriteSheet = getSpriteSheetsManager ().getSpriteSheet ("player");
     let body = (*spriteSheet).getSpriteDrawable(spriteId);
     let linearMovement = createLinearMovement (posX, posY);
     return Player { name, body, 0, 0, false, 0, linearMovement, ParabolicMovement::init };
@@ -142,20 +141,15 @@ def goLeft (ref player : Player)
     }
 }
 
-def goTo (ref player : Player, posX : i32, posY : i32)
-{
-    player.body.drawable.dstpos.x = posX;
-    player.body.drawable.dstpos.y = posY;
-}
-
 def passRow (ref player : Player)
 {    
     if (!player.isJumping)
     {
         let (x, y) = player.linearMovement.nextPosition ();
-        player.speedX = x - player.body.drawable.dstpos.x;
-        player.speedY = y - player.body.drawable.dstpos.y;
-        player.goTo (x, y);
+        let (playerX, playerY) = player.body.getPosition ();
+        player.speedX = x - playerX;
+        player.speedY = y - playerY;
+        player.body.setPosition(x, y);
 
         player.fall ();
     }
@@ -168,8 +162,9 @@ def passRow (ref player : Player)
 def passRowJump (ref player : Player)
 {
     let (x, y) = player.parabolicMovement.nextPosition ();
-    let diffX = x - player.body.drawable.dstpos.x;
-    let diffY = y - player.body.drawable.dstpos.y;
+    let (playerX, playerY) = player.body.getPosition ();
+    let diffX = x - playerX;
+    let diffY = y - playerY;
     
     let colManager = getCollisionManager ();
     let collided = false;
@@ -216,5 +211,5 @@ def passRowJump (ref player : Player)
     player.speedY = diffY;
     
     if (!collided)
-        player.goTo (x, y);
+        player.body.setPosition(x, y);
 }
