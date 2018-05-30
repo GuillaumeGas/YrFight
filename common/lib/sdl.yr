@@ -26,6 +26,9 @@ public {
     extern (C) SDL_GetError () -> const p!char;
     extern (C) SDL_NumJoysticks () -> i32;
     extern (C) SDL_JoystickEventState (const state : i32) -> i32;
+    extern (C) SDL_StartTextInput ();
+    extern (C) SDL_StopTextInput ();
+    extern (C) SDL_IsTextInputActive () -> bool;
     // SDL_GetWindowSize () could be usefull    
 }
 
@@ -75,7 +78,23 @@ struct
 | sym : i32
 | mode : u16
 | unicode : u32    
--> SDL_KeyboardEvent;
+ -> SDL_KeyboardEvent;
+
+struct
+| type : i32
+| timestamp : u32
+| windowId : u32
+| text : [char ; 32U]
+ -> SDL_TextInputEvent;
+
+struct
+| type : i32
+| timestamp : u32
+| windowId : u32 
+| text : [char ; 32U]
+| start : i32
+| length : i32
+ -> SDL_TextEditingEvent;
 
 struct
 | x : i32
@@ -120,6 +139,8 @@ enum : u32
 | QUIT : 256U
 | KEYDOWN : 768U
 | KEYUP : 769U
+| TEXTEDITING : 770U
+| TEXTINPUT : 771U
 | MOUSEMOTION : 1024U
 | MOUSEBUTTONDOWN : 1025U
 | MOUSEBUTTONUP : 1026U
@@ -131,6 +152,7 @@ enum : u32
 | JOYBUTTONUP : 0x604u
 | JOYDEVICEADDED : 0x605u
 | JOYDEVICEREMOVED : 0x606u
+    
 | UNKNOWN : 0U // not used by the SDL
  -> SDL_EventType;
 

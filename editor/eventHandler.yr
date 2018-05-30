@@ -20,6 +20,14 @@ struct
  -> KeyboardEvent;
 
 struct
+| signal : Signal!(ref Editor, string)
+ -> KeyboardTextEvent;
+
+struct
+| signal : Signal!(ref Editor, SDL_TextEditingEvent)
+ -> KeyboardTextEditEvent;
+
+struct
 | type : u32
 | buttonCode : u8
 | signal : Signal!(ref Editor, (i32, i32))
@@ -32,6 +40,8 @@ struct
 struct
 | classicEvents : List!ClassicEvent
 | keyboardEvents : List!KeyboardEvent
+| keyboardTextEvents : List!KeyboardTextEvent
+| keyboardTextEditEvents : List!KeyboardTextEditEvent
 | keyboardWithKeyRepeatEvents : List!KeyboardEvent // we must use a SDL_Scancode instead of a SDL_Keycode in this case
 | mouseEvents : List!MouseEvent
 | mouseMotionEvents : MouseMotionEvent
@@ -43,10 +53,12 @@ def createEventHandler (ref editor : Editor) -> mut EventHandler
 {
     let listClassicEvent = list!ClassicEvent ();
     let listKeyboardEvent = list!KeyboardEvent ();
+    let listKeyboardTextEvent = list!KeyboardTextEvent ();
+    let listKeyboardTextEditEvent = list!KeyboardTextEditEvent ();
     let listKeyboardWithKeyRepeatEvent = list!KeyboardEvent ();
     let listMouseEvents = list!MouseEvent ();
     let sdlEvent = SDL_Event::init;
-    return EventHandler { listClassicEvent, listKeyboardEvent, listKeyboardWithKeyRepeatEvent, listMouseEvents, MouseMotionEvent::init, sdlEvent, &editor };
+    return EventHandler { listClassicEvent, listKeyboardEvent, listKeyboardTextEvent, listKeyboardTextEditEvent, listKeyboardWithKeyRepeatEvent, listMouseEvents, MouseMotionEvent::init, sdlEvent, &editor };
 }
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, signal : Signal!(ref Editor))
@@ -74,6 +86,18 @@ def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, (i32, i32
     eventHdl.mouseMotionEvents = MouseMotionEvent { signal };
 }
 
+def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, string))
+{
+    eventHdl.keyboardTextEvents.push (KeyboardTextEvent { signal });
+}
+
+def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, SDL_TextEditingEvent))
+{
+    eventHdl.keyboardTextEditEvents.push (KeyboardTextEditEvent { signal });
+}
+
+
+
 /* 
     SDL2 doesn't provide a SDL_EnableKeyRepeat function, that's why we handle events by this way :
         - Classic SDL_PollEvent() in order to retreive none-keyboard events (quit and mouse)
@@ -97,6 +121,18 @@ def handleEvents(ref eventHdl : EventHandler)
     {
         match (sdlEventPtr.type)
         {
+            SDL_EventType::TEXTINPUT => {
+                if(SDL_IsTextInputActive()){
+                    let evt = cast!(p!SDL_TextInputEvent) (sdlEventPtr);
+                    eventHdl.handleKeyboardTextEvent (evt.text);
+                }
+            }
+            SDL_EventType::TEXTEDITING => {
+                if(SDL_IsTextInputActive()){
+                    let evt = cast!(p!SDL_TextEditingEvent) (sdlEventPtr);
+                    eventHdl.handleKeyboardTextEditEvent (*evt);
+                }
+            }
             SDL_EventType::QUIT => {
                 eventHdl.handleClassicEvent (sdlEventPtr.type);
             }
@@ -129,6 +165,37 @@ def handleClassicEvent (ref eventHdl : EventHandler, eventType : u32)
         next_ = next(next_);
     }
 }
+
+def handleKeyboardTextEvent (ref eventHdl : EventHandler, text : [char ; 32U])
+{
+    let val = "";
+    for c in text{
+        if(c == '\0')
+            break;
+        else
+            val ~= cast!string([c]);
+    }
+    let next_ = eventHdl.keyboardTextEvents.next ();
+    while (next_ !is null)
+    {
+        let sig = next_.value.signal;
+        sig.call (*(eventHdl.editor), val);
+        next_ = next(next_);
+    }
+}
+
+
+def handleKeyboardTextEditEvent (ref eventHdl : EventHandler, evt : SDL_TextEditingEvent)
+{
+    let next_ = eventHdl.keyboardTextEditEvents.next ();
+    while (next_ !is null)
+    {
+        let sig = next_.value.signal;
+        sig.call (*(eventHdl.editor), evt);
+        next_ = next(next_);
+    }
+}
+
 
 def handleKeyboardEvent (ref eventHdl : EventHandler, eventType : u32, keyCode : i32) -> bool
 {

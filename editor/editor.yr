@@ -49,6 +49,8 @@ def createEditor (ref editor : Editor, filepath : string)
     editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
     editor.screen.addDrawable(&(editor.drawable));
     editor.continue = true;
+    SDL_StopTextInput();
+    //SDL_StartTextInput();
 }
 
 def start (ref editor : Editor)
@@ -84,10 +86,14 @@ def initEvents (ref eventHdl : EventHandler)
     let zoomOutSignal = Signal!(ref Editor)::init;
     zoomOutSignal.connect (onZoomOut);
 
-     let saveSignal = Signal!(ref Editor)::init;
-    saveSignal.connect (onSave);    
+    let saveSignal = Signal!(ref Editor)::init;
+    saveSignal.connect (onSave);
+
+    let textSignal = Signal!(ref Editor, string)::init;
+    textSignal.connect (onInput);    
 
     eventHdl.onEvent (SDL_EventType::QUIT, quitSignal);
+    eventHdl.onEvent (textSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE, cancelSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_UP, zoomInSignal);
     eventHdl.onEvent (SDL_EventType::KEYUP, SDL_Keycode::SDLK_DOWN, zoomOutSignal);
@@ -228,4 +234,9 @@ def getUnZoomValue(ref editor : Editor, val : i32) -> i32
 def getZoomValue(ref editor : Editor, val : i32) -> i32
 {
     return cast!i32(val * editor.screen.zoom);
+}
+
+
+def onInput(ref editor : Editor, text : string){
+    println(text);
 }
