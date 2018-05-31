@@ -49,6 +49,10 @@ struct
 | editor : p!Editor
  -> EventHandler;
 
+self(){
+    SDL_StopTextInput();
+}
+
 def createEventHandler (ref editor : Editor) -> mut EventHandler
 {
     let listClassicEvent = list!ClassicEvent ();
