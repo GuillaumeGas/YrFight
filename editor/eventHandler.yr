@@ -11,30 +11,36 @@ import editor.editor;
 struct
 | type : u32
 | signal : Signal!(ref Editor)
+| disabled : bool
  -> ClassicEvent;
 
 struct
 | type : u32
 | keyCode : i32
 | signal : Signal!(ref Editor)
+| disabled : bool
  -> KeyboardEvent;
 
 struct
 | signal : Signal!(ref Editor, string)
+| disabled : bool
  -> KeyboardTextEvent;
 
 struct
 | signal : Signal!(ref Editor, SDL_TextEditingEvent)
+| disabled : bool
  -> KeyboardTextEditEvent;
 
 struct
 | type : u32
 | buttonCode : u8
 | signal : Signal!(ref Editor, (i32, i32))
+| disabled : bool
  -> MouseEvent;
 
 struct
 | signal : Signal!(ref Editor, (i32, i32))
+| disabled : bool
  -> MouseMotionEvent;
 
 struct
@@ -67,39 +73,46 @@ def createEventHandler (ref editor : Editor) -> mut EventHandler
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, signal : Signal!(ref Editor))
 {
-    eventHdl.classicEvents.push (ClassicEvent { eventType, signal });
+    eventHdl.classicEvents.push (ClassicEvent { eventType, signal, false });
 }
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, keyCode : SDL_Keycode, signal : Signal!(ref Editor))
 {
-    eventHdl.keyboardEvents.push (KeyboardEvent { eventType, keyCode, signal });
+    eventHdl.keyboardEvents.push (KeyboardEvent { eventType, keyCode, signal, false });
 }
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, keyScanCode : SDL_Scancode, signal : Signal!(ref Editor))
 {
-    eventHdl.keyboardWithKeyRepeatEvents.push (KeyboardEvent { eventType, keyScanCode, signal });
+    eventHdl.keyboardWithKeyRepeatEvents.push (KeyboardEvent { eventType, keyScanCode, signal, false });
 }
 
 def onEvent (ref eventHdl : EventHandler, eventType : SDL_EventType, buttonCode : SDL_Mousecode, signal : Signal!(ref Editor, (i32, i32)))
 {
-    eventHdl.mouseEvents.push (MouseEvent { eventType, buttonCode, signal });
+    eventHdl.mouseEvents.push (MouseEvent { eventType, buttonCode, signal, false });
 }
 
 def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, (i32, i32)))
 {
-    eventHdl.mouseMotionEvents = MouseMotionEvent { signal };
+    eventHdl.mouseMotionEvents = MouseMotionEvent { signal, false };
 }
 
 def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, string))
 {
-    eventHdl.keyboardTextEvents.push (KeyboardTextEvent { signal });
+    eventHdl.keyboardTextEvents.push (KeyboardTextEvent { signal, false });
 }
 
 def onEvent (ref eventHdl : EventHandler, signal : Signal!(ref Editor, SDL_TextEditingEvent))
 {
-    eventHdl.keyboardTextEditEvents.push (KeyboardTextEditEvent { signal });
+    eventHdl.keyboardTextEditEvents.push (KeyboardTextEditEvent { signal, false });
 }
 
+def isEvent (T) () 
+    return is (T : ClassicEvent) || is (T : KeyboardEvent) || is (T : MouseEvent) || is (T : MouseMotionEvent) ||
+    is (T : KeyboardTextEvent) || is (T : KeyboardTextEditEvent);
+
+def setDisableEvent if (isEvent!T) (T) (ref event : T, state : bool){
+    event.disabled = state;
+}
 
 
 /* 
@@ -161,7 +174,7 @@ def handleClassicEvent (ref eventHdl : EventHandler, eventType : u32)
     let next_ = eventHdl.classicEvents.next ();
     while (next_ !is null)
     {
-        if (next_.value.type == eventType)
+        if (next_.value.type == eventType && !next_.value.disabled)
         {
             let sig = next_.value.signal;
             sig.call (*(eventHdl.editor));
@@ -182,8 +195,10 @@ def handleKeyboardTextEvent (ref eventHdl : EventHandler, text : [char ; 32U])
     let next_ = eventHdl.keyboardTextEvents.next ();
     while (next_ !is null)
     {
-        let sig = next_.value.signal;
-        sig.call (*(eventHdl.editor), val);
+        if(!next_.value.disabled){
+            let sig = next_.value.signal;
+            sig.call (*(eventHdl.editor), val);
+        }
         next_ = next(next_);
     }
 }
@@ -194,8 +209,10 @@ def handleKeyboardTextEditEvent (ref eventHdl : EventHandler, evt : SDL_TextEdit
     let next_ = eventHdl.keyboardTextEditEvents.next ();
     while (next_ !is null)
     {
-        let sig = next_.value.signal;
-        sig.call (*(eventHdl.editor), evt);
+        if(!next_.value.disabled){
+            let sig = next_.value.signal;
+            sig.call (*(eventHdl.editor), evt);
+        }
         next_ = next(next_);
     }
 }
@@ -207,7 +224,7 @@ def handleKeyboardEvent (ref eventHdl : EventHandler, eventType : u32, keyCode :
     let next_ = eventHdl.keyboardEvents.next();
     while (next_ !is null)
     {
-        if (next_.value.type == eventType && next_.value.keyCode == keyCode)
+        if (next_.value.type == eventType && next_.value.keyCode == keyCode  && !next_.value.disabled)
         {
             let sig = next_.value.signal;
             sig.call (*(eventHdl.editor));
@@ -225,7 +242,7 @@ def handleKeyboardWithKeyRepeatEvent (ref eventHdl : EventHandler, eventType : u
     let ret = false;
     while (next_ !is null)
     {
-        if (*(keyboardState + (next_.value.keyCode)) == 1ub)
+        if (*(keyboardState + (next_.value.keyCode)) == 1ub  && !next_.value.disabled)
         {
             let sig = next_.value.signal;
             sig.call (*(eventHdl.editor));
@@ -241,7 +258,7 @@ def handleMouseEvent (ref eventHdl : EventHandler, eventType : u32, buttonCode :
     let next_ = eventHdl.mouseEvents.next();
     while (next_ !is null)
     {
-        if (next_.value.type == eventType && next_.value.buttonCode == buttonCode)
+        if (next_.value.type == eventType && next_.value.buttonCode == buttonCode && !next_.value.disabled)
         {
             let sig = next_.value.signal;
             sig.call (*(eventHdl.editor), pos);
@@ -252,6 +269,9 @@ def handleMouseEvent (ref eventHdl : EventHandler, eventType : u32, buttonCode :
 
 def handleMouseMotionEvent (ref eventHdl : EventHandler, pos : (i32, i32))
 {
-    let sig = eventHdl.mouseMotionEvents.signal;
-    sig.call (*(eventHdl.editor), pos);
+    if(!eventHdl.mouseMotionEvents.disabled)
+    {
+        let sig = eventHdl.mouseMotionEvents.signal;
+        sig.call (*(eventHdl.editor), pos);
+    }
 }
