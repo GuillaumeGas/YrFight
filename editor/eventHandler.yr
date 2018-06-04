@@ -110,16 +110,33 @@ def isEvent (T) ()
     return is (T : ClassicEvent) || is (T : KeyboardEvent) || is (T : MouseEvent) || is (T : MouseMotionEvent) ||
     is (T : KeyboardTextEvent) || is (T : KeyboardTextEditEvent);
 
-def setDisableEvent if (isEvent!T) (T) (ref event : T, state : bool){
+def setDisable if (isEvent!T) (T) (ref event : T, state : bool){
     event.disabled = state;
 }
 
 def setDisableAllEvents if (isEvent!T) (T) (ref list : List!T, state : bool){
     for itm in list{
-        itm.setDisableEvent(state);
+        itm.setDisable(state);
     }
 }
 
+def findEvent(ref eventHdl : EventHandler, eventType : SDL_EventType, keyCode : SDL_Keycode) -> p!KeyboardEvent
+{
+    for itm in eventHdl.keyboardEvents{
+        if(itm.keyCode == keyCode && itm.type == eventType)
+            return &itm;
+    }
+    return null;
+}
+
+def findEvent(ref eventHdl : EventHandler, eventType : SDL_EventType) -> p!ClassicEvent
+{
+    for itm in eventHdl.classicEvents{
+        if(itm.type == eventType)
+            return &itm;
+    }
+    return null;
+}
 /* 
     SDL2 doesn't provide a SDL_EnableKeyRepeat function, that's why we handle events by this way :
         - Classic SDL_PollEvent() in order to retreive none-keyboard events (quit and mouse)
