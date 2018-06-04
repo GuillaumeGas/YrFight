@@ -22,7 +22,7 @@ FILE (
 SET_SOURCE_FILES_PROPERTIES(mainGame.yr mainEditor.yr ${GameSourceFiles} ${EditorSourceFiles} PROPERTIES LANGUAGE C)
 
 ADD_EXECUTABLE(yreditor mainEditor.yr ${EditorSourceFiles})
-target_link_libraries (yreditor -lSDL2 -lSDL2main -lSDL2_image)
+target_link_libraries (yreditor -lSDL2 -lSDL2main -lSDL2_image -lSDL2_ttf)
 include_directories (yreditor ./)
 
 ADD_EXECUTABLE(yrfight mainGame.yr ${GameSourceFiles})

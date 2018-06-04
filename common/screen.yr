@@ -7,6 +7,7 @@ import std.abort;
 import std.list;
 
 import common.lib.sdl;
+import common.lib.sdlttf;
 import common.drawable;
 import common.resource;
 import common.lib.signal;
@@ -39,6 +40,7 @@ def createScreen (const title : string, const windowWidth : i32, const windowHei
         printErr ("SDL_Init() error");
         abort ();
     }
+    TTF_Init();
     
     let screen = Screen::init;
     screen.zoom = 1.f;
@@ -81,7 +83,7 @@ def draw (ref screen : Screen)
         let draw = *(next_.value);
         let res = draw.res;
 
-        if (res.texture !is null)
+        if (res !is null && res.texture !is null)
         {
             // picture's piece
             let spriteSrcRect = draw.srcpos;
@@ -144,4 +146,11 @@ def zoomIn(ref screen : Screen){
 def zoomOut(ref screen : Screen){
     if(screen.zoom > 1.f)
         screen.zoom = screen.zoom - screen.zoomStep;
+}
+
+def getTextTexture(ref screen : Screen, text : string) -> p!SDL_Texture{
+    let font = TTF_OpenFont("Sans.ttf".ptr, 24);
+    let color = SDL_Color {cast!u8(255), cast!u8(255), cast!u8(255), cast!u8(255)};
+    let surface = TTF_RenderText_Solid(font, text.ptr, color);
+    return SDL_CreateTextureFromSurface(screen.renderer, surface);
 }

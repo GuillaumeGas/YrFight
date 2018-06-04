@@ -1,0 +1,40 @@
+mod common.lib.sdlttf;
+
+import common.lib.sdl;
+
+public{
+    extern (C) TTF_Init() -> i32;
+    extern (C) TTF_RenderText_Solid(font : p!TTF_Font, const text : p!char , color : SDL_Color) -> p!SDL_Surface;
+    extern (C) TTF_OpenFont(const font : p!char, i32) -> p!TTF_Font;
+}
+
+struct
+| stored : i32
+| minx : i32
+| maxx : i32
+| miny : i32
+| maxy : i32
+| yoffset : i32
+| advance : i32
+| cached : i16
+ -> Glyph_Cached;
+
+struct
+| height : i32
+| ascent : i32
+| descent : i32
+| lineskip : i32
+| face_style : i32
+| style : i32
+| outline : i32
+| kerning : i32
+| glyph_overhang : i32
+| glyph_italics : f32
+| underline_offset : i32
+| underline_height : i32
+| current : p!Glyph_Cached
+| cache : [Glyph_Cached ; 257U]
+ -> TTF_Font;
+
+
+

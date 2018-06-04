@@ -25,6 +25,7 @@ struct
 | currentSelectedPos : bool
 | drawable : Drawable
 | spritesheet : SpriteSheet
+| text : Drawable
  -> Editor;
 
 cte gWindowWidth = 640;
@@ -48,6 +49,7 @@ def createEditor (ref editor : Editor, filepath : string)
     //we must resize the window to the size of the sprite or the max size of the screen
     editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
     editor.screen.addDrawable(&(editor.drawable));
+    editor.screen.addDrawable(&(editor.text));
     editor.continue = true;
 }
 
@@ -146,7 +148,6 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     }else if(x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y){
         // we add a new SpriteItem to the Sprite and we reset the selection
         SDL_StartTextInput();
-        editor.screen.drawText(SDL_Rect { x, y, 100, 100 });
         editor.eventHdl.keyboardEvents.setDisableAllEvents(true);
         editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(true);
         editor.eventHdl.mouseEvents.setDisableAllEvents(true);
@@ -154,6 +155,7 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
 
         (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_RETURN))).setDisable(false);
         (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE))).setDisable(false);
+        (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_BACKSPACE))).setDisable(false);
     }
 }
 
@@ -252,7 +254,11 @@ def getZoomValue(ref editor : Editor, val : i32) -> i32
 
 def onInput(ref editor : Editor, text : string){
     editor.spriteSelection.name ~= text;
-    print(text);
+    println("\r" ~ editor.spriteSelection.name);
+    //let res = Resource::init;
+    //res.texture = editor.screen.getTextTexture(text);
+    //SDL_QueryTexture (res.texture, null, null, &res.width, &res.height);
+    //editor.text.res = &res;    
 }
 
 def onTextEnd(ref editor : Editor){
@@ -272,6 +278,8 @@ def stopTextInput(ref editor : Editor){
 }
 
 def onTextBack(ref editor : Editor){
-    if(editor.spriteSelection.name != "")
-        editor.spriteSelection.name = editor.spriteSelection.name[0U .. editor.spriteSelection.name.len - 2U].array ();
+    if(editor.spriteSelection.name != ""){
+        editor.spriteSelection.name = editor.spriteSelection.name[0U .. editor.spriteSelection.name.len - 1U].array ();
+        println("\r" ~ editor.spriteSelection.name);
+    }
 }
