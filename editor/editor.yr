@@ -146,6 +146,11 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     }else if(x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y){
         // we add a new SpriteItem to the Sprite and we reset the selection
         SDL_StartTextInput();
+        editor.eventHdl.classicEvents.setDisableAllEvents(true);
+        editor.eventHdl.keyboardEvents.setDisableAllEvents(true);
+        editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(true);
+        editor.eventHdl.mouseEvents.setDisableAllEvents(true);
+        editor.eventHdl.mouseMotionEvents.setDisableEvent(true);
     }
 }
 
@@ -247,6 +252,12 @@ def onTextEnd(ref editor : Editor){
         SDL_StopTextInput();
         editor.currentSelectedPos = false;
         editor.spritesheet.addSprite(editor.spriteSelection);
+
+        editor.eventHdl.classicEvents.setDisableAllEvents(false);
+        editor.eventHdl.keyboardEvents.setDisableAllEvents(false);
+        editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(false);
+        editor.eventHdl.mouseEvents.setDisableAllEvents(false);
+        editor.eventHdl.mouseMotionEvents.setDisableEvent(false);
     }
 }
 

@@ -114,6 +114,11 @@ def setDisableEvent if (isEvent!T) (T) (ref event : T, state : bool){
     event.disabled = state;
 }
 
+def setDisableAllEvents if (isEvent!T) (T) (ref list : List!T, state : bool){
+    for itm in list{
+        itm.setDisableEvent(state);
+    }
+}
 
 /* 
     SDL2 doesn't provide a SDL_EnableKeyRepeat function, that's why we handle events by this way :
