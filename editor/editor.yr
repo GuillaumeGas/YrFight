@@ -15,6 +15,7 @@ import common.sprite.spritesheet;
 import common.sprite.sprite;
 import common.lib.parser.parser;
 import common.lib.jsonWriter;
+import std.memory;
 
 struct
 | screen : Screen
@@ -39,6 +40,7 @@ def createEditor (ref editor : Editor, width : u32, height : u32)
     editor.screen = createScreen (gTitle, cast!i32 (width), cast!i32 (height), gWindowPosX, gWindowPosY);
     editor.eventHdl = createEventHandler (editor);
     initEvents (editor.eventHdl);
+    SDL_StopTextInput(); //le self ne marche pas dans eventHandler :/
 }
 
 def createEditor (ref editor : Editor, filepath : string)
@@ -47,8 +49,11 @@ def createEditor (ref editor : Editor, filepath : string)
     editor.spritesheet = tryLoadJson(filepath);
     editor.spritesheet.loadResource(editor.screen.renderer);
     //we must resize the window to the size of the sprite or the max size of the screen
-    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
+    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , false,  getResourcesManager().getResource(filepath) };
     editor.screen.addDrawable(&(editor.drawable));
+    editor.text.res = alloc( Resource::init );
+    editor.text.hide = true;
+    //editor.text.dstpos = SDL_Rect { 0, 0, 200, 200 };
     editor.screen.addDrawable(&(editor.text));
     editor.continue = true;
 }
@@ -121,14 +126,20 @@ def onMouseMotion (ref editor : Editor, pos : (i32, i32))
     let (x, y) = pos;
     x = editor.getUnZoomValue(x);
     y = editor.getUnZoomValue(y);
-    if(x != editor.mouse.x || y != editor.mouse.y){
+    if(!SDL_IsTextInputActive()){
+        if(x != editor.mouse.x || y != editor.mouse.y){
+            editor.mouse.x = x;
+            editor.mouse.y = y;
+            if(editor.currentSelectedPos && x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y)
+            {
+                editor.spriteSelection.position.w = x-editor.spriteSelection.position.x;
+                editor.spriteSelection.position.h = y-editor.spriteSelection.position.y;
+            }
+        }
+    }else{
         editor.mouse.x = x;
         editor.mouse.y = y;
-        if(editor.currentSelectedPos && x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y)
-        {
-            editor.spriteSelection.position.w = x-editor.spriteSelection.position.x;
-            editor.spriteSelection.position.h = y-editor.spriteSelection.position.y;
-        }
+        editor.drawText();
     }
 }
 
@@ -151,7 +162,6 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
         editor.eventHdl.keyboardEvents.setDisableAllEvents(true);
         editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(true);
         editor.eventHdl.mouseEvents.setDisableAllEvents(true);
-        editor.eventHdl.mouseMotionEvents.setDisable(true);
 
         (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_RETURN))).setDisable(false);
         (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE))).setDisable(false);
@@ -254,11 +264,15 @@ def getZoomValue(ref editor : Editor, val : i32) -> i32
 
 def onInput(ref editor : Editor, text : string){
     editor.spriteSelection.name ~= text;
-    println("\r" ~ editor.spriteSelection.name);
-    //let res = Resource::init;
-    //res.texture = editor.screen.getTextTexture(text);
-    //SDL_QueryTexture (res.texture, null, null, &res.width, &res.height);
-    //editor.text.res = &res;    
+    editor.drawText();  
+}
+
+def drawText(ref editor : Editor){
+    editor.text.hide = false;
+    editor.text.res.texture = editor.screen.getTextTexture(editor.spriteSelection.name);
+    editor.text.dstpos.x = editor.getZoomValue(editor.mouse.x) + 10;
+    editor.text.dstpos.y = editor.getZoomValue(editor.mouse.y);
+    SDL_QueryTexture (editor.text.res.texture, null, null, &editor.text.res.width, &editor.text.res.height);  
 }
 
 def onTextEnd(ref editor : Editor){
@@ -274,12 +288,12 @@ def stopTextInput(ref editor : Editor){
     editor.eventHdl.keyboardEvents.setDisableAllEvents(false);
     editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(false);
     editor.eventHdl.mouseEvents.setDisableAllEvents(false);
-    editor.eventHdl.mouseMotionEvents.setDisable(false);
+    editor.text.hide = true;
 }
 
 def onTextBack(ref editor : Editor){
     if(editor.spriteSelection.name != ""){
         editor.spriteSelection.name = editor.spriteSelection.name[0U .. editor.spriteSelection.name.len - 1U].array ();
-        println("\r" ~ editor.spriteSelection.name);
+        editor.drawText();
     }
 }

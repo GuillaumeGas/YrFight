@@ -12,7 +12,8 @@ struct
 
 struct
 | srcpos : SDL_Rect
-| dstpos : SDL_Rect    
+| dstpos : SDL_Rect
+| hide : bool
 | res : p!Resource
  -> Drawable;
 

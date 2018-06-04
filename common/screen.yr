@@ -83,7 +83,7 @@ def draw (ref screen : Screen)
         let draw = *(next_.value);
         let res = draw.res;
 
-        if (res !is null && res.texture !is null)
+        if (res !is null && res.texture !is null && !draw.hide)
         {
             // picture's piece
             let spriteSrcRect = draw.srcpos;
@@ -149,7 +149,7 @@ def zoomOut(ref screen : Screen){
 }
 
 def getTextTexture(ref screen : Screen, text : string) -> p!SDL_Texture{
-    let font = TTF_OpenFont("Sans.ttf".ptr, 24);
+    let font = TTF_OpenFont("OpenSans.ttf".ptr, 24);
     let color = SDL_Color {cast!u8(255), cast!u8(255), cast!u8(255), cast!u8(255)};
     let surface = TTF_RenderText_Solid(font, text.ptr, color);
     return SDL_CreateTextureFromSurface(screen.renderer, surface);
