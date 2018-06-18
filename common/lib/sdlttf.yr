@@ -1,0 +1,16 @@
+mod common.lib.sdlttf;
+
+import common.lib.sdl;
+
+public{
+    extern (C) TTF_Init() -> i32;
+    extern (C) TTF_RenderText_Solid(font : p!TTF_Font, const text : p!char , color : SDL_Color) -> p!SDL_Surface;
+    extern (C) TTF_OpenFont(const font : p!char, i32) -> p!TTF_Font;
+}
+
+struct
+| data : p!void
+ -> TTF_Font;
+
+
+

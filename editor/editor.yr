@@ -15,6 +15,7 @@ import common.sprite.spritesheet;
 import common.sprite.sprite;
 import common.lib.parser.parser;
 import common.lib.jsonWriter;
+import std.memory;
 
 struct
 | screen : Screen
@@ -25,6 +26,7 @@ struct
 | currentSelectedPos : bool
 | drawable : Drawable
 | spritesheet : SpriteSheet
+| text : Drawable
  -> Editor;
 
 cte gWindowWidth = 640;
@@ -38,6 +40,7 @@ def createEditor (ref editor : Editor, width : u32, height : u32)
     editor.screen = createScreen (gTitle, cast!i32 (width), cast!i32 (height), gWindowPosX, gWindowPosY);
     editor.eventHdl = createEventHandler (editor);
     initEvents (editor.eventHdl);
+    SDL_StopTextInput(); //le self ne marche pas dans eventHandler :/
 }
 
 def createEditor (ref editor : Editor, filepath : string)
@@ -46,8 +49,12 @@ def createEditor (ref editor : Editor, filepath : string)
     editor.spritesheet = tryLoadJson(filepath);
     editor.spritesheet.loadResource(editor.screen.renderer);
     //we must resize the window to the size of the sprite or the max size of the screen
-    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , getResourcesManager().getResource(filepath) };
+    editor.drawable = Drawable { SDL_Rect { 0, 0, 0, 0 }, SDL_Rect {0, 0, 0, 0} , false,  getResourcesManager().getResource(filepath) };
     editor.screen.addDrawable(&(editor.drawable));
+    editor.text.res = alloc( Resource::init );
+    editor.text.hide = true;
+    //editor.text.dstpos = SDL_Rect { 0, 0, 200, 200 };
+    editor.screen.addDrawable(&(editor.text));
     editor.continue = true;
 }
 
@@ -119,14 +126,20 @@ def onMouseMotion (ref editor : Editor, pos : (i32, i32))
     let (x, y) = pos;
     x = editor.getUnZoomValue(x);
     y = editor.getUnZoomValue(y);
-    if(x != editor.mouse.x || y != editor.mouse.y){
+    if(!SDL_IsTextInputActive()){
+        if(x != editor.mouse.x || y != editor.mouse.y){
+            editor.mouse.x = x;
+            editor.mouse.y = y;
+            if(editor.currentSelectedPos && x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y)
+            {
+                editor.spriteSelection.position.w = x-editor.spriteSelection.position.x;
+                editor.spriteSelection.position.h = y-editor.spriteSelection.position.y;
+            }
+        }
+    }else{
         editor.mouse.x = x;
         editor.mouse.y = y;
-        if(editor.currentSelectedPos && x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y)
-        {
-            editor.spriteSelection.position.w = x-editor.spriteSelection.position.x;
-            editor.spriteSelection.position.h = y-editor.spriteSelection.position.y;
-        }
+        editor.drawText();
     }
 }
 
@@ -146,11 +159,13 @@ def onMouseClick (ref editor : Editor, pos : (i32, i32))
     }else if(x > editor.spriteSelection.position.x && y > editor.spriteSelection.position.y){
         // we add a new SpriteItem to the Sprite and we reset the selection
         SDL_StartTextInput();
-        editor.eventHdl.classicEvents.setDisableAllEvents(true);
         editor.eventHdl.keyboardEvents.setDisableAllEvents(true);
         editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(true);
         editor.eventHdl.mouseEvents.setDisableAllEvents(true);
-        editor.eventHdl.mouseMotionEvents.setDisableEvent(true);
+
+        (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_RETURN))).setDisable(false);
+        (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_ESCAPE))).setDisable(false);
+        (*(editor.eventHdl.findEvent(SDL_EventType::KEYUP, SDL_Keycode::SDLK_BACKSPACE))).setDisable(false);
     }
 }
 
@@ -206,8 +221,13 @@ def drawMouse(ref editor : Editor){
 }
 
 def onCancel(ref editor : Editor){
-    if(editor.currentSelectedPos)
-        editor.currentSelectedPos = false;
+    if(editor.currentSelectedPos){
+        if(SDL_IsTextInputActive()){
+            editor.stopTextInput();
+        }else{
+            editor.currentSelectedPos = false;
+        }
+    }
 }
 
 def onZoomIn(ref editor : Editor){
@@ -244,24 +264,36 @@ def getZoomValue(ref editor : Editor, val : i32) -> i32
 
 def onInput(ref editor : Editor, text : string){
     editor.spriteSelection.name ~= text;
-    print(text);
+    editor.drawText();  
+}
+
+def drawText(ref editor : Editor){
+    editor.text.hide = false;
+    editor.text.res.texture = editor.screen.getTextTexture(editor.spriteSelection.name);
+    editor.text.dstpos.x = editor.getZoomValue(editor.mouse.x) + 10;
+    editor.text.dstpos.y = editor.getZoomValue(editor.mouse.y);
+    SDL_QueryTexture (editor.text.res.texture, null, null, &editor.text.res.width, &editor.text.res.height);  
 }
 
 def onTextEnd(ref editor : Editor){
     if(SDL_IsTextInputActive() && editor.spriteSelection.name != ""){
-        SDL_StopTextInput();
+        editor.stopTextInput();
         editor.currentSelectedPos = false;
         editor.spritesheet.addSprite(editor.spriteSelection);
-
-        editor.eventHdl.classicEvents.setDisableAllEvents(false);
-        editor.eventHdl.keyboardEvents.setDisableAllEvents(false);
-        editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(false);
-        editor.eventHdl.mouseEvents.setDisableAllEvents(false);
-        editor.eventHdl.mouseMotionEvents.setDisableEvent(false);
     }
 }
 
+def stopTextInput(ref editor : Editor){
+    SDL_StopTextInput();    
+    editor.eventHdl.keyboardEvents.setDisableAllEvents(false);
+    editor.eventHdl.keyboardWithKeyRepeatEvents.setDisableAllEvents(false);
+    editor.eventHdl.mouseEvents.setDisableAllEvents(false);
+    editor.text.hide = true;
+}
+
 def onTextBack(ref editor : Editor){
-    if(editor.spriteSelection.name != "")
-        editor.spriteSelection.name = editor.spriteSelection.name[0U .. editor.spriteSelection.name.len - 2U].array ();
+    if(editor.spriteSelection.name != ""){
+        editor.spriteSelection.name = editor.spriteSelection.name[0U .. editor.spriteSelection.name.len - 1U].array ();
+        editor.drawText();
+    }
 }

@@ -1,11 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(YrFight C)
-SET(CMAKE_C_COMPILER "gyc")
+SET(CMAKE_C_COMPILER "gyc-7")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fdump-tree-gimple")
 
 FILE (
   GLOB_RECURSE
   GameSourceFiles
+  editor/*
   game/*
   common/*
   common/sprite/*
@@ -14,7 +15,7 @@ FILE (
 FILE (
   GLOB_RECURSE
   EditorSourceFiles
-  editor/*
+  editor/*  
   common/*
   common/sprite/*
   )
@@ -22,9 +23,9 @@ FILE (
 SET_SOURCE_FILES_PROPERTIES(mainGame.yr mainEditor.yr ${GameSourceFiles} ${EditorSourceFiles} PROPERTIES LANGUAGE C)
 
 ADD_EXECUTABLE(yreditor mainEditor.yr ${EditorSourceFiles})
-target_link_libraries (yreditor -lSDL2 -lSDL2main -lSDL2_image)
+target_link_libraries (yreditor -lSDL2 -lSDL2main -lSDL2_image -lSDL2_ttf)
 include_directories (yreditor ./)
 
 ADD_EXECUTABLE(yrfight mainGame.yr ${GameSourceFiles})
-target_link_libraries (yrfight -lSDL2 -lSDL2main -lSDL2_image -lm)
+target_link_libraries (yrfight -lSDL2 -lSDL2main -lSDL2_image -lm -lSDL2_ttf)
 include_directories (yrfight ./)

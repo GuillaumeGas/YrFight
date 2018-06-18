@@ -29,6 +29,7 @@ public {
     extern (C) SDL_StartTextInput ();
     extern (C) SDL_StopTextInput ();
     extern (C) SDL_IsTextInputActive () -> bool;
+    extern (C) SDL_SetTextInputRect (rect : p!SDL_Rect);
     // SDL_GetWindowSize () could be usefull    
 }
 
@@ -107,6 +108,13 @@ struct
 | x : i32
 | y : i32
  -> SDL_Point;
+
+struct
+| r : u8
+| g : u8
+| b : u8
+| a : u8
+ -> SDL_Color;
 
 // TODO : complete by using SDL.h
 enum : u32
