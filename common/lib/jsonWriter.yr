@@ -37,7 +37,7 @@ def write (ref file : File, jsonValue : JsonValue) -> RetCode
 def write (ref file : File, jsonValue : JsonValue, const offset : i32, const fromKey : bool) -> RetCode
 {
     let ret = RetCode::Success;
-    match (jsonValue.type)
+    match (jsonValue.info)
     {
         JSON_TYPE::OBJECT => ret = file.writeObject (jsonValue.obj, offset, fromKey);
         JSON_TYPE::ARRAY => ret = file.writeArray (jsonValue.array, offset, fromKey);

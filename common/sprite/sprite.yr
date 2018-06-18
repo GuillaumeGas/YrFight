@@ -25,7 +25,7 @@ def loadFromJsonString(json : string) -> Sprite{
 
 def fromJson(json : JsonValue) -> Sprite{
     let sprite = Sprite::init;
-    if(json.type == JSON_TYPE::OBJECT){
+    if(json.info == JSON_TYPE::OBJECT){
         let name = ("name" in json.obj);
         if(name !is null)
             sprite.name = name.str;
@@ -37,7 +37,7 @@ def fromJson(json : JsonValue) -> Sprite{
 }
 
 def fromJson(ref rect : SDL_Rect, json : JsonValue){
-    if(json.type == JSON_TYPE::OBJECT){
+    if(json.info == JSON_TYPE::OBJECT){
         let x = ("x" in json.obj);
         if(x !is null)
             rect.x = cast!i32(x.int);
@@ -56,10 +56,10 @@ def fromJson(ref rect : SDL_Rect, json : JsonValue){
 def toJson(ref sprite : Sprite) -> JsonValue
 {
     let json = JsonValue::init;
-    json.type = JSON_TYPE::OBJECT;
+    json.info = JSON_TYPE::OBJECT;
     
     let name = JsonValue::init;
-    name.type = JSON_TYPE::STRING;
+    name.info = JSON_TYPE::STRING;
     name.str = sprite.name;
     json.obj.insert("name", name);
     
@@ -71,25 +71,25 @@ def toJson(ref sprite : Sprite) -> JsonValue
 def toJson(ref rect : SDL_Rect) -> JsonValue
 {
     let json = JsonValue::init;
-    json.type = JSON_TYPE::OBJECT;
+    json.info = JSON_TYPE::OBJECT;
 
     let x = JsonValue::init;
-    x.type = JSON_TYPE::INT;
+    x.info = JSON_TYPE::INT;
     x.int = rect.x;
     json.obj.insert("x", x);
 
     let y = JsonValue::init;
-    y.type = JSON_TYPE::INT;
+    y.info = JSON_TYPE::INT;
     y.int = rect.y;
     json.obj.insert("y", y);
 
     let w = JsonValue::init;
-    w.type = JSON_TYPE::INT;
+    w.info = JSON_TYPE::INT;
     w.int = rect.w;
     json.obj.insert("w", w);
 
     let h = JsonValue::init;
-    h.type = JSON_TYPE::INT;
+    h.info = JSON_TYPE::INT;
     h.int = rect.h;
     json.obj.insert("h", h);
 

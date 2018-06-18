@@ -37,10 +37,10 @@ def visitRoot (ref parser : Parser) -> JsonValue
     let res = JsonValue::init;
 
     if (token.tokenType == TokenType::ACCOL_L) {
-        res.type = JSON_TYPE::OBJECT;
+        res.info = JSON_TYPE::OBJECT;
         parser.visitAccolContent (res);
     } else if (token.tokenType == TokenType::BRACKET_L) {
-        res.type = JSON_TYPE::ARRAY;
+        res.info = JSON_TYPE::ARRAY;
         res.array = parser.visitArray ();
     } else {
         parser.syntaxError (["object", "array"], token);
@@ -96,11 +96,11 @@ def visitObject (ref parser : Parser, ref jsonValue : JsonValue)
     {
         TokenType::BRACKET_L => {
             objValue.array = parser.visitArray ();
-            objValue.type = JSON_TYPE::ARRAY;
+            objValue.info = JSON_TYPE::ARRAY;
         }
         TokenType::ACCOL_L => {
             parser.visitAccolContent (objValue);
-            objValue.type = JSON_TYPE::OBJECT;
+            objValue.info = JSON_TYPE::OBJECT;
         }
         _ => {
             if (!parser.visitConst (objValue))
@@ -151,12 +151,12 @@ def visitArray (ref parser : Parser) -> Vector!JsonValue
         if (token.tokenType == TokenType::BRACKET_L)
         {
             jsonValue.array = parser.visitArray ();
-            jsonValue.type = JSON_TYPE::ARRAY;
+            jsonValue.info = JSON_TYPE::ARRAY;
         }
         else if (token.tokenType == TokenType::ACCOL_L)
         {
             parser.visitAccolContent (jsonValue);
-            jsonValue.type = JSON_TYPE::OBJECT;
+            jsonValue.info = JSON_TYPE::OBJECT;
         }
         else
         {
@@ -219,7 +219,7 @@ def visitQuotedString (ref parser : Parser, ref jsonValue : JsonValue) -> bool
     if (token.tokenType != TokenType::DOUBLE_QUOTE)
         parser.syntaxError (["\""], token);
 
-    jsonValue.type = JSON_TYPE::STRING;
+    jsonValue.info = JSON_TYPE::STRING;
     jsonValue.str = to!string (outbuf);
 
     (*lex).setSkipEnabled (" ", true);
@@ -242,7 +242,7 @@ def visitInt (ref parser : Parser, ref jsonValue : JsonValue) -> bool
     }
 
     jsonValue.int = to!i32 (token.value);
-    jsonValue.type = JSON_TYPE::INT;
+    jsonValue.info = JSON_TYPE::INT;
     
     return true;
 }
@@ -334,7 +334,7 @@ def toString(ref json : JsonValue) -> string{
 
 def toString(ref json : JsonValue, const offset : i32, const fromKey : bool) -> string{
     let val = string::init;
-    match json.type {
+    match json.info {
         JSON_TYPE::OBJECT => {
             if(!fromKey)
                 val ~= printOffset(offset);
